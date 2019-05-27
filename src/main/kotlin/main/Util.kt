@@ -19,7 +19,7 @@ fun Boolean.toInt(): Int {
  * @param runnable Task to be executed
  */
 fun benchmark(name: String, runnable: () -> Unit){
-    println("main.Running $name ...")
+    println("Running $name ...")
     val start = System.currentTimeMillis()
     runnable.invoke()
     println("Time: ${System.currentTimeMillis() - start}ms")

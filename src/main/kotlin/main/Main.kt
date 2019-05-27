@@ -10,6 +10,15 @@ java -jar AutoFighter.jar 5 kt0 "java -jar ../KTTT_jar/KTTT.jar 1500 8" ktold"ja
 
 fun main(args: Array<String>) {
     var board = Bitboard()
+
+    if(args.contains("movegen")){
+        val depth = args[1].toInt()
+        benchmark("Movegen depth=$depth"){
+            println(Bitboard.moveGen(board, depth))
+        }
+        System.exit(0)
+    }
+
     val time = if(args.isNotEmpty()) args[0].toInt() else 1500
     val threads = if(args.size >= 2) args[1].toInt() else 8
 

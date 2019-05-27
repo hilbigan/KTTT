@@ -16,9 +16,13 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         return Bitboard(validField, boardCopy, turn)
     }
 
-    fun taken(pos: Int): Boolean = (board[0][toIndex(field(pos))] or board[1][toIndex(field(pos))]) and square(pos) != 0
+    fun taken(pos: Int): Boolean {
+        return (board[0][toIndex(field(pos))] or board[1][toIndex(field(pos))]) and square(pos) != 0
+    }
 
-    fun takenBy(player: Int, pos: Int) = board[player][toIndex(field(pos))] and square(pos) != 0
+    fun takenBy(player: Int, pos: Int): Boolean {
+        return board[player][toIndex(field(pos))] and square(pos) != 0
+    }
 
     fun isLegal(move: Int): Boolean {
         return field(move) and validField != 0 && !taken(move) && !fieldIsBlocked(toIndex(field(move)))
@@ -50,7 +54,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         for(i in 0..8){
             if(((1 shl i) and validField) != 0){
                 for(s in 0..8){
-                    var move = (1 shl s) or ((1 shl i) shl 16)
+                    val move = (1 shl s) or ((1 shl i) shl 16)
                     if(!taken(move) && !fieldIsBlocked(i)){
                         list.add(move or (if(validField == ALL_FIELDS) ALL_FIELDS_LEGAL else 0))
                     }
@@ -121,6 +125,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
                 .toInt() shl 1) or ((isWon(board[p][8]))
                 .toInt() shl 0)
         }
+
         cachedMetaField = field
         dirty = false
         return field
@@ -149,7 +154,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
             }
         }
         if(isWon(board[1][toIndex(field(pos))])){
-            return if(square(pos) and (ROWS[0] or ROWS[2] or ___O_O___) != 0){
+            return if(square(pos) and (ROWS[0] or ROWS[2] or O_O) != 0){
                 "OO"
             } else {
                 "  "
@@ -175,7 +180,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
 
         val FIELD = 0x1FF shl 16
         val SQUARE = 0xFFFF
-        val ALL_FIELDS_LEGAL = 0x200 shl 16
+        val ALL_FIELDS_LEGAL = 1 shl 25
 
         /**
          * 0o777
@@ -185,7 +190,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         val DIAGS = intArrayOf(oct(421), oct(124))
         val ROWS = intArrayOf(oct(700), oct(70), oct(7))
         val COLS = intArrayOf(oct(111), oct(222), oct(444))
-        val ___O_O___ = oct(50)
+        val O_O = oct(50)
 
         fun moveToString(move: Int): String {
             return "[a${((move and ALL_FIELDS_LEGAL) shr 16)} f${toIndex(
@@ -225,18 +230,10 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         fun field(i: Int) = (i and FIELD) shr 16
         fun square(i: Int) = (i and SQUARE)
 
-        fun toIndex(i: Int) = when(i){
-            1   -> 0
-            2   -> 1
-            4   -> 2
-            8   -> 3
-            16  -> 4
-            32  -> 5
-            64  -> 6
-            128 -> 7
-            256 -> 8
-            else-> error("toIndex: $i OOB!")
-        }
+        /**
+         * Basically fast log2 for powers of two
+         */
+        fun toIndex(i: Int) = 31 - Integer.numberOfLeadingZeros(i)
 
         fun isWon(field: Int) =
             (field and DIAGS[0]) == DIAGS[0]

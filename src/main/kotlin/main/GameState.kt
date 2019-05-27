@@ -1,18 +1,19 @@
 package main
 
-open class GameState
+abstract class GameState
+
 class Running : GameState(){
     override fun toString(): String {
-        return "main.Running()"
+        return "Running()"
     }
 }
 class Tied : GameState(){
     override fun toString(): String {
-        return "main.Tied()"
+        return "Tied()"
     }
 }
 class Won(val who: Int) : GameState(){
     override fun toString(): String {
-        return "main.Won($who)"
+        return "Won($who)"
     }
 }
