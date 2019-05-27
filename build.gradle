@@ -1,0 +1,39 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+}
+
+group 'KTTT'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+task jarKTTT(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'main.MainKt'
+    }
+    baseName = 'kttt'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+task jarAutoFighter(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'auto.AutoFighterKt'
+    }
+    baseName = 'auto_fighter'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
