@@ -173,6 +173,16 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         }
     }
 
+    override fun equals(other: Any?): Boolean {
+        if(other == null || other !is Bitboard) return false
+
+        if(turn != other.turn) return false
+        if(validField != other.validField) return false
+        if(!board.contentDeepEquals(other.board)) return false
+
+        return true
+    }
+
     companion object {
 
         val WHITE = 0

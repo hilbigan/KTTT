@@ -1,6 +1,7 @@
 package mcts
 
 import main.*
+import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Semaphore
 import kotlin.math.ln
@@ -11,19 +12,24 @@ class MCTS(
     val time: Int,
     private val threads: Int,
     val player: Int,
-    val debug: Boolean = false
+    val debug: Boolean = false,
+    val persistent: Boolean = false
 ) {
 
-    val root: Node
+    var root: Node
 
     init {
         root = Node(board.clone(), parent = null)
     }
 
-    fun start(): Int {
+    private fun start(): Int {
         val threads = (0 until threads).map { MCTSThread(this, it) }
 
-        root.generateMoves(true)
+        if(root.children.isEmpty()) {
+            root.generateMoves(true)
+        } else {
+            root.annotateMoves()
+        }
 
         threads.forEach { it.start() }
         threads.forEach { it.join() }
@@ -32,14 +38,52 @@ class MCTS(
         if(debug) {
             val avg = root.children.sumBy { it.n } / root.children.size.toDouble()
             val stdev = sqrt(root.children.map { (avg - it.n) * (avg - it.n) }.sum() / root.children.size.toDouble())
-            println("Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: $avg; Stdev: $stdev")
+            println("Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: $avg; Stdev: $stdev; MaxDepth: ${threads.map { it.maxDepth }.max()}")
         }
+
+        if(persistent){
+            bestMove.parent = null
+            root = bestMove
+        }
+
         return bestMove.move
+    }
+
+    fun nextMove(newPosition: Bitboard? = null): Int {
+        if(!persistent){
+            root = Node(newPosition!!, parent = null)
+        } else if(newPosition != null && newPosition != root.board){
+            val queue = ArrayDeque<Node>()
+            var newRoot: Node? = null
+            queue.addAll(root.children)
+            while(queue.isNotEmpty()){
+                val node = queue.poll()
+                if(node.board == newPosition){
+                    newRoot = node
+                    break
+                } else {
+                    queue.addAll(node.children)
+                }
+            }
+
+            if(newRoot != null){
+                if(debug) println("Found new position in existing tree. New root node is $newRoot (${newRoot.q}/${newRoot.n})")
+                root = newRoot
+            } else {
+                if(debug) println("No matching position found, creating new root node (old tree will be lost).")
+                root = Node(newPosition, parent = null)
+            }
+        } else {
+            if(debug) println("Board position has not changed. Using already existant root node.")
+        }
+
+        return start()
     }
 
     class MCTSThread(val parent: MCTS, val id: Int) : Thread() {
 
         var iter = 0
+        var maxDepth = 0
 
         override fun run() {
             iter = 0
@@ -47,6 +91,7 @@ class MCTS(
             val now = System.currentTimeMillis()
 
             while(System.currentTimeMillis() - now < parent.time){
+                var depth = 0
                 var child: Node? = parent.root.traverse()//parent.root.traverseAndRollout(parent.player)
                 child!!.virtualLoss = true
                 child.parent?.virtualLoss = true
@@ -57,15 +102,22 @@ class MCTS(
                 while(child != null){
                     child.update(result)
                     child = child.parent
+                    depth++
                 }
                 iter++
+
+                if(depth > maxDepth)
+                    maxDepth = depth
             }
             //println("Thread $id stopped. Iterations: $iter")
         }
 
     }
 
-    class Node(val board: Bitboard, var q: Int = 0, var n: Int = 0, val children: CopyOnWriteArrayList<Node> = CopyOnWriteArrayList(), val move: Int = 0, val parent: Node?) {
+    class Node(val board: Bitboard, var move: Int = 0, var parent: Node?) {
+        val children: CopyOnWriteArrayList<Node> = CopyOnWriteArrayList()
+        var q: Int = 0
+        var n: Int = 0
         
         val mutex = Semaphore(1, true)
 
@@ -73,7 +125,6 @@ class MCTS(
             set(value) = synchronized(this){
                 field = value
             }
-
 
         fun generateMoves(annotated: Boolean = false) = synchronized(children){
             if(children.size > 0){
@@ -87,6 +138,14 @@ class MCTS(
                     children.add(Node(clone, parent = this))
                 else
                     children.add(Node(clone, parent = this, move = it/*, depth = depth + 1*/))
+                board.undoMove(it)
+            }
+        }
+
+        fun annotateMoves(){
+            board.getAllMoves().forEach {
+                board.makeMove(it)
+                children.first { it.board == board }.move = it
                 board.undoMove(it)
             }
         }
