@@ -38,7 +38,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         val field = field(move)
         val square = square(move)
         board[turn][toIndex(field)] = board[turn][toIndex(field)] or square
-        //println(moveToString(move))
+
         if(fieldIsBlocked(toIndex(square)) || isWon(field)){
             validField = ALL_FIELDS
         } else {
@@ -265,4 +265,11 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
     }
 
     fun getTotalPopcnt(): Int = board[0].sumBy { popcnt(it) } + board[1].sumBy { popcnt(it) }
+
+    override fun hashCode(): Int {
+        var result = validField
+        result = 31 * result + board.contentDeepHashCode()
+        result = 31 * result + turn
+        return result
+    }
 }

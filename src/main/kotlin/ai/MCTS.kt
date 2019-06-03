@@ -1,4 +1,4 @@
-package mcts
+package ai
 
 import main.*
 import java.util.*
@@ -17,6 +17,7 @@ class MCTS(
 ) {
 
     var root: Node
+    val strategy = Strategy.getRandom()
 
     init {
         root = Node(board.clone(), parent = null)
@@ -25,11 +26,7 @@ class MCTS(
     private fun start(): Int {
         val threads = (0 until threads).map { MCTSThread(this, it) }
 
-        if(root.children.isEmpty()) {
-            root.generateMoves(true)
-        } else {
-            root.annotateMoves()
-        }
+        root.generateMoves()
 
         threads.forEach { it.start() }
         threads.forEach { it.join() }
@@ -38,7 +35,7 @@ class MCTS(
         if(debug) {
             val avg = root.children.sumBy { it.n } / root.children.size.toDouble()
             val stdev = sqrt(root.children.map { (avg - it.n) * (avg - it.n) }.sum() / root.children.size.toDouble())
-            println("Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: $avg; Stdev: $stdev; MaxDepth: ${threads.map { it.maxDepth }.max()}")
+            println("!dbg Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: $avg; Stdev: $stdev; MaxDepth: ${threads.map { it.maxDepth }.max()}")
         }
 
         if(persistent){
@@ -67,14 +64,14 @@ class MCTS(
             }
 
             if(newRoot != null){
-                if(debug) println("Found new position in existing tree. New root node is $newRoot (${newRoot.q}/${newRoot.n})")
+                if(debug) println("!dbg Found new position in existing tree. New root node is $newRoot (${newRoot.q}/${newRoot.n})")
                 root = newRoot
             } else {
-                if(debug) println("No matching position found, creating new root node (old tree will be lost).")
+                if(debug) println("!dbg No matching position found, creating new root node (old tree will be lost).")
                 root = Node(newPosition, parent = null)
             }
         } else {
-            if(debug) println("Board position has not changed. Using already existant root node.")
+            if(debug) println("!dbg Board position has not changed. Using already existant root node.")
         }
 
         return start()
@@ -95,7 +92,7 @@ class MCTS(
                 var child: Node? = parent.root.traverse()//parent.root.traverseAndRollout(parent.player)
                 child!!.virtualLoss = true
                 child.parent?.virtualLoss = true
-                val result = child.rollout(parent.player)
+                val result = child.rollout(parent.player, parent.strategy)
                 child.virtualLoss = false
                 child.parent?.virtualLoss = false
 
@@ -126,26 +123,18 @@ class MCTS(
                 field = value
             }
 
-        fun generateMoves(annotated: Boolean = false) = synchronized(children){
+        fun generateMoves() = synchronized(children){
             if(children.size > 0){
                 return
             }
 
             board.getAllMoves().forEach {
                 board.makeMove(it)
-                val clone = board.clone()
-                if(!annotated)
-                    children.add(Node(clone, parent = this))
-                else
-                    children.add(Node(clone, parent = this, move = it/*, depth = depth + 1*/))
-                board.undoMove(it)
-            }
-        }
 
-        fun annotateMoves(){
-            board.getAllMoves().forEach {
-                board.makeMove(it)
-                children.first { it.board == board }.move = it
+                val clone = board.clone()
+
+                children.add(Node(clone, parent = this, move = it))
+
                 board.undoMove(it)
             }
         }
@@ -177,9 +166,10 @@ class MCTS(
             }
         }
 
-        fun rollout(player: Int): Int {
+        fun rollout(player: Int, strategy: Strategy): Int {
             val boardCopy = board.clone()
             var moves = board.getTotalPopcnt()
+
             while(!boardCopy.isGameOver()){
                 val legalMoves = boardCopy.getAllMoves()
                 val move = legalMoves[random(legalMoves.size)]
@@ -190,19 +180,24 @@ class MCTS(
                 moves++
             }
 
+
             val state = boardCopy.getGameState()
-            if(state is Won && state.who == player){
-                return 1
-            } else if(state is Won) {
-                return -1
-            } else {
+            if(state is Won && state.who == player){ // Won
+                if(strategy.isAchieved(boardCopy, player)){
+                    return 2
+                } else {
+                    return 1
+                }
+            } else if(state is Won) { // Lost
+                    return -1
+            } else { // Tie
                 return 0
             }
         }
 
         fun update(result: Int) = synchronized(this){
             q += result
-            n++
+            n += 1
         }
 
         private fun getUCT(parent: Node): Double = synchronized(this){

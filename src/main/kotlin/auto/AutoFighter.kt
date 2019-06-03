@@ -47,7 +47,13 @@ fun main(args: Array<String>) {
     }
 
     fun r(i: Int): String {
-        return if(i == 0) in0.readLine() else in1.readLine()
+        val str = if(i == 0) in0.readLine() else in1.readLine()
+        if(str.startsWith("!dbg")){
+            println("${listOf(prog0name, prog1name)[i]}: $str")
+            return r(i)
+        } else {
+            return str
+        }
     }
 
     fun waitFor(i: Int){
@@ -129,8 +135,8 @@ fun main(args: Array<String>) {
                 if(winner == 0)
                     score0++
                 else score1++
-                println("Score: $score0 -- $score1 ($prog0name -- $prog1name)")
             }
         }
+        println("Score: $score0 -- $score1 ($prog0name -- $prog1name)")
     }
 }

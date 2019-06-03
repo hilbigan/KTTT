@@ -1,6 +1,6 @@
 package main
 
-import mcts.MCTS
+import ai.MCTS
 import java.lang.Exception
 import java.util.*
 
@@ -80,12 +80,12 @@ fun main(args: Array<String>) {
         }
     } else {
         val scanner = Scanner(System.`in`)
-        var mcts = MCTS(board, time, threads, 1 - board.turn)
+        var mcts = MCTS(board, time, threads, 1 - board.turn, debug = true)
         while(true){
             val input = scanner.nextLine()
 
             if(input == "start"){
-                mcts = MCTS(board, time, threads, board.turn)
+                mcts = MCTS(board, time, threads, board.turn, debug = true)
             } else if(input == "draw"){
                 println(board.toPrettyString())
                 continue
@@ -93,7 +93,7 @@ fun main(args: Array<String>) {
                 System.exit(0)
             } else if(input == "reset"){
                 board = Bitboard()
-                mcts = MCTS(board, time, threads, 1)
+                mcts = MCTS(board, time, threads, 1, debug = true)
                 println("ok")
                 continue
             } else {
