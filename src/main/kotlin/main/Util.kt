@@ -34,3 +34,5 @@ fun globalTime(runnable: () -> Unit){
 
 private val random = Random(System.currentTimeMillis())
 fun random(max: Int) = random.nextInt(max)
+
+fun Double.format(digits: Int) = java.lang.String.format("%.${digits}f", this)

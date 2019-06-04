@@ -203,7 +203,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         val O_O = oct(50)
 
         fun moveToString(move: Int): String {
-            return "[a${((move and ALL_FIELDS_LEGAL) shr 16)} f${toIndex(
+            return "[a${((move and ALL_FIELDS_LEGAL) shr 25)} f${toIndex(
                 field(move)
             )} s${toIndex(square(move))}]"
         }

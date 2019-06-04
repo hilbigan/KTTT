@@ -4,6 +4,7 @@ import main.*
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Semaphore
+import kotlin.collections.ArrayList
 import kotlin.math.ln
 import kotlin.math.sqrt
 
@@ -33,9 +34,9 @@ class MCTS(
 
         val bestMove = root.children.maxBy { it.n }!!
         if(debug) {
-            val avg = root.children.sumBy { it.n } / root.children.size.toDouble()
-            val stdev = sqrt(root.children.map { (avg - it.n) * (avg - it.n) }.sum() / root.children.size.toDouble())
-            println("!dbg Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: $avg; Stdev: $stdev; MaxDepth: ${threads.map { it.maxDepth }.max()}")
+            val avg = root.children.sumBy { it.n } / root.children.size.toDouble() / bestMove.n * 100
+            val stdev = sqrt(root.children.map { (avg - it.n) * (avg - it.n) }.sum() / root.children.size.toDouble()) / bestMove.n * 100
+            println("!dbg Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: ${avg.format(1)}%; Stdev: ${stdev.format(1)}%; MaxDepth: ${threads.map { it.maxDepth }.max()}")
         }
 
         if(persistent){
@@ -115,8 +116,6 @@ class MCTS(
         val children: CopyOnWriteArrayList<Node> = CopyOnWriteArrayList()
         var q: Int = 0
         var n: Int = 0
-        
-        val mutex = Semaphore(1, true)
 
         var virtualLoss: Boolean = false
             set(value) = synchronized(this){

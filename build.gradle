@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile 'no.tornado:tornadofx:1.7.17'
 }
 
 compileKotlin {
@@ -28,6 +29,16 @@ task jarKTTT(type: Jar) {
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
+
+task jarGui(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'gui.MainGuiKt'
+    }
+    baseName = 'kttt-gui'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 
 task jarAutoFighter(type: Jar) {
     manifest {
