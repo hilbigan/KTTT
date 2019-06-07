@@ -1,5 +1,11 @@
 # Build
 
+To build the GUI:
+```
+./gradlew jarGui
+```
+Edit src/main/kotlin/gui/MainGui to adjust AI strength.
+
 To build KTTT (main AI):
 ```
 ./gradlew jarKTTT
