@@ -3,35 +3,47 @@ package ai
 import main.*
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Semaphore
-import kotlin.collections.ArrayList
 import kotlin.math.ln
 import kotlin.math.sqrt
 
 class MCTS(
     board: Bitboard,
     val time: Int,
-    private val threads: Int,
+    private val numThreads: Int,
     val player: Int,
     val debug: Boolean = false,
-    val persistent: Boolean = false
+    val persistent: Boolean = true,
+    val ponder: Boolean = true
 ) {
 
     var root: Node
     val strategy = Strategy.getRandom()
+    val threads = mutableListOf<MCTSThread>()
+    var changingTree = false
 
     init {
         root = Node(board.clone(), parent = null)
     }
 
-    private fun start(): Int {
-        val threads = (0 until threads).map { MCTSThread(this, it) }
-
-        root.generateMoves()
+    private fun start() {
+        threads.clear()
+        threads.addAll((0 until numThreads).map { MCTSThread(this, it) })
 
         threads.forEach { it.start() }
-        threads.forEach { it.join() }
 
+        if(!ponder) { // If ponder disabled, wait for all threads to finish
+            threads.forEach { it.join() }
+        } else { // else, wait for the time to run out and leave the threads running
+            Thread.sleep(time.toLong())
+        }
+    }
+
+    fun stop(){
+        threads.forEach { it.stop = true }
+        threads.forEach { it.join() }
+    }
+
+    private fun getBestMove(): Int {
         val bestMove = root.children.maxBy { it.n }!!
         if(debug) {
             val avg = root.children.sumBy { it.n } / root.children.size.toDouble() / bestMove.n * 100
@@ -40,14 +52,19 @@ class MCTS(
         }
 
         if(persistent){
+            changingTree = true
+
             bestMove.parent = null
             root = bestMove
+
+            changingTree = false
         }
 
         return bestMove.move
     }
 
     fun nextMove(newPosition: Bitboard? = null): Int {
+        changingTree = true
         if(!persistent){
             root = Node(newPosition!!, parent = null)
         } else if(newPosition != null && newPosition != root.board){
@@ -75,20 +92,39 @@ class MCTS(
             if(debug) println("!dbg Board position has not changed. Using already existant root node.")
         }
 
-        return start()
+        root.generateMoves()
+
+        changingTree = false
+
+        if(!threads.isEmpty() && threads.all { it.running }){
+            Thread.sleep(time.toLong())
+            return getBestMove()
+        } else {
+            start()
+            return getBestMove()
+        }
     }
 
     class MCTSThread(val parent: MCTS, val id: Int) : Thread() {
 
         var iter = 0
         var maxDepth = 0
+        var stop = false
+        var running = false
 
         override fun run() {
+            running = true
             iter = 0
-            //println("Thread $id starting...")
+
+            println("Thread $id starting...")
+
             val now = System.currentTimeMillis()
 
-            while(System.currentTimeMillis() - now < parent.time){
+            while((System.currentTimeMillis() - now < parent.time) || (parent.ponder && !stop)){
+                while (parent.changingTree){
+                    Thread.sleep(0, 50)
+                }
+
                 var depth = 0
                 var child: Node? = parent.root.traverse()//parent.root.traverseAndRollout(parent.player)
                 child!!.virtualLoss = true
@@ -107,7 +143,9 @@ class MCTS(
                 if(depth > maxDepth)
                     maxDepth = depth
             }
-            //println("Thread $id stopped. Iterations: $iter")
+
+            running = false
+            println("Thread $id stopped.")
         }
 
     }
