@@ -8,7 +8,6 @@ import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import main.Bitboard
 import tornadofx.*
-import kotlin.coroutines.suspendCoroutine
 
 class KTTTApplication : App(GameView::class) {
     val board = Bitboard()
@@ -20,7 +19,7 @@ class GameView : View() {
         get() = (app as KTTTApplication).board
 
     // GUI AI Skill
-    val mcts = MCTS(board, 200, 8, debug = true, player = 1)
+    val mcts = MCTS(board, 200, 4, debug = true, ponder = false, player = 1)
 
     val buttons = mutableListOf<TTTButton>()
 

@@ -1,6 +1,9 @@
 package ai
 
-import main.*
+import main.Bitboard
+import main.Won
+import main.format
+import main.random
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.ln
@@ -13,11 +16,11 @@ class MCTS(
     val player: Int,
     val debug: Boolean = false,
     val persistent: Boolean = true,
-    val ponder: Boolean = true
+    val ponder: Boolean = true,
+    val strategy: Strategy = Strategy.RANDOM_PLAY
 ) {
 
     var root: Node
-    val strategy = Strategy.getRandom()
     val threads = mutableListOf<MCTSThread>()
     var changingTree = false
 
@@ -26,6 +29,7 @@ class MCTS(
     }
 
     private fun start() {
+        println("!dbg Starting $numThreads threads with ${strategy.name} strategy.")
         threads.clear()
         threads.addAll((0 until numThreads).map { MCTSThread(this, it) })
 
@@ -126,7 +130,7 @@ class MCTS(
                 }
 
                 var depth = 0
-                var child: Node? = parent.root.traverse()//parent.root.traverseAndRollout(parent.player)
+                var child: Node? = parent.root.traverse()
                 child!!.virtualLoss = true
                 child.parent?.virtualLoss = true
                 val result = child.rollout(parent.player, parent.strategy)
@@ -152,7 +156,7 @@ class MCTS(
 
     class Node(val board: Bitboard, var move: Int = 0, var parent: Node?) {
         val children: CopyOnWriteArrayList<Node> = CopyOnWriteArrayList()
-        var q: Int = 0
+        var q: Double = 0.0
         var n: Int = 0
 
         var virtualLoss: Boolean = false
@@ -203,43 +207,45 @@ class MCTS(
             }
         }
 
-        fun rollout(player: Int, strategy: Strategy): Int {
-            val boardCopy = board.clone()
-            var moves = board.getTotalPopcnt()
+        fun rollout(player: Int, strategy: Strategy): Double {
+            if(strategy == Strategy.RANDOM_PLAY) {
+                val boardCopy = board.clone()
+                var moves = board.getTotalPopcnt()
 
-            while(!boardCopy.isGameOver()){
-                val legalMoves = boardCopy.getAllMoves()
-                val move = legalMoves[random(legalMoves.size)]
-                boardCopy.makeMove(move)
-                if(boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves.size > 10 && moves < 25){
-                    boardCopy.undoMove(move)
+                while (!boardCopy.isGameOver()) {
+                    val legalMoves = boardCopy.getAllMoves()
+                    val move = legalMoves[random(legalMoves.size)]
+                    boardCopy.makeMove(move)
+                    if (boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves.size > 10 && moves < 25) {
+                        boardCopy.undoMove(move)
+                    }
+                    moves++
                 }
-                moves++
-            }
 
 
-            val state = boardCopy.getGameState()
-            if(state is Won && state.who == player){ // Won
-                if(strategy.isAchieved(boardCopy, player)){
-                    return 2
-                } else {
-                    return 1
+                val state = boardCopy.getGameState()
+                if (state is Won && state.who == player) { // Won
+                    return 1.0
+                } else if (state is Won) { // Lost
+                    return -1.0
+                } else { // Tie
+                    return 0.0
                 }
-            } else if(state is Won) { // Lost
-                    return -1
-            } else { // Tie
-                return 0
+            } else if(strategy == Strategy.NEURAL_NETWORK_EVAL){
+                return 0.0 //TODO
+            } else {
+                error("Invalid rollout strategy")
             }
         }
 
-        fun update(result: Int) = synchronized(this){
+        fun update(result: Double) = synchronized(this){
             q += result
             n += 1
         }
 
         private fun getUCT(parent: Node): Double = synchronized(this){
             val virtualLossScalar = if(virtualLoss) 0.5 else 1.0
-            return ((q.toDouble() / n) + UCT_EXPLORATION_SCALAR * sqrt(ln(parent.n.toDouble()) / n)) * virtualLossScalar
+            return ((q / n) + UCT_EXPLORATION_SCALAR * sqrt(ln(parent.n.toDouble()) / n)) * virtualLossScalar
         }
     }
 
