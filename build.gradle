@@ -12,6 +12,9 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile 'no.tornado:tornadofx:1.7.17'
+    compile "org.deeplearning4j:deeplearning4j-core:1.0.0-beta4"
+    compile group: 'org.nd4j', name: 'nd4j-native-platform', version: '1.0.0-beta4'
+    compile group: 'org.datavec', name: 'datavec-api', version: '1.0.0-beta4'
 }
 
 compileKotlin {

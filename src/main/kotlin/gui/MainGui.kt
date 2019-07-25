@@ -3,14 +3,22 @@ package gui
 import ai.MCTS
 import javafx.application.Application
 import javafx.application.Platform
+import javafx.scene.control.Alert
 import javafx.scene.control.Button
+import javafx.scene.control.ButtonType
 import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import main.Bitboard
 import tornadofx.*
 
+
 class KTTTApplication : App(GameView::class) {
-    val board = Bitboard()
+    var board = Bitboard()
+
+    // GUI AI Skill
+    var mcts = getAI()
+
+    private fun getAI() = MCTS(board, 200, 4, debug = true, ponder = false, player = 1)
 }
 
 class GameView : View() {
@@ -18,8 +26,8 @@ class GameView : View() {
     val board: Bitboard
         get() = (app as KTTTApplication).board
 
-    // GUI AI Skill
-    val mcts = MCTS(board, 200, 4, debug = true, ponder = false, player = 1)
+    val mcts: MCTS
+        get() = (app as KTTTApplication).mcts
 
     val buttons = mutableListOf<TTTButton>()
 
@@ -54,7 +62,28 @@ class GameView : View() {
         runAsync {
             val move = mcts.nextMove(board)
             board.makeMove(move)
-            Platform.runLater { updateButtons(disable = false) }
+            Platform.runLater {
+                updateButtons(disable = false)
+
+                if(board.isGameOver()){
+                    val alert = Alert(Alert.AlertType.NONE)
+                    alert.headerText = "Game Over!"
+                    alert.contentText = "Result: ${board.getGameState()}"
+                    val buttonReset = ButtonType("New Game")
+                    val buttonClose = ButtonType("Close")
+                    alert.buttonTypes.setAll(buttonClose, buttonReset)
+
+                    when (alert.showAndWait().orElseGet { buttonClose }) {
+                        buttonReset -> {
+                            (app as KTTTApplication).board = Bitboard()
+                            updateButtons(disable = false)
+                        }
+                        else -> {
+                            alert.close()
+                        }
+                    }
+                }
+            }
         }
     }
 }

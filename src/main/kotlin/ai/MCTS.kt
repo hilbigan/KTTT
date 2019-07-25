@@ -1,7 +1,6 @@
 package ai
 
 import main.Bitboard
-import main.Won
 import main.format
 import main.random
 import java.util.*
@@ -17,7 +16,7 @@ class MCTS(
     val debug: Boolean = false,
     val persistent: Boolean = true,
     val ponder: Boolean = true,
-    val strategy: Strategy = Strategy.RANDOM_PLAY
+    val strategy: Strategy = RandomPlayStrategy()
 ) {
 
     var root: Node
@@ -29,7 +28,7 @@ class MCTS(
     }
 
     private fun start() {
-        println("!dbg Starting $numThreads threads with ${strategy.name} strategy.")
+        if(debug) println("!dbg Starting $numThreads threads with ${strategy.javaClass.name} strategy.")
         threads.clear()
         threads.addAll((0 until numThreads).map { MCTSThread(this, it) })
 
@@ -120,7 +119,7 @@ class MCTS(
             running = true
             iter = 0
 
-            println("!dbg Thread $id starting...")
+            if(parent.debug) println("!dbg Thread $id starting...")
 
             val now = System.currentTimeMillis()
 
@@ -149,7 +148,7 @@ class MCTS(
             }
 
             running = false
-            println("!dbg Thread $id stopped.")
+            if(parent.debug) println("!dbg Thread $id stopped.")
         }
 
     }
@@ -208,34 +207,7 @@ class MCTS(
         }
 
         fun rollout(player: Int, strategy: Strategy): Double {
-            if(strategy == Strategy.RANDOM_PLAY) {
-                val boardCopy = board.clone()
-                var moves = board.getTotalPopcnt()
-
-                while (!boardCopy.isGameOver()) {
-                    val legalMoves = boardCopy.getAllMoves()
-                    val move = legalMoves[random(legalMoves.size)]
-                    boardCopy.makeMove(move)
-                    if (boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves.size > 10 && moves < 25) {
-                        boardCopy.undoMove(move)
-                    }
-                    moves++
-                }
-
-
-                val state = boardCopy.getGameState()
-                if (state is Won && state.who == player) { // Won
-                    return 1.0
-                } else if (state is Won) { // Lost
-                    return -1.0
-                } else { // Tie
-                    return 0.0
-                }
-            } else if(strategy == Strategy.NEURAL_NETWORK_EVAL){
-                return 0.0 //TODO
-            } else {
-                error("Invalid rollout strategy")
-            }
+            return strategy.rollout(board, player)
         }
 
         fun update(result: Double) = synchronized(this){
