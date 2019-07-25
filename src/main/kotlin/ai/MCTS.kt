@@ -116,7 +116,7 @@ class MCTS(
             running = true
             iter = 0
 
-            println("Thread $id starting...")
+            println("!dbg Thread $id starting...")
 
             val now = System.currentTimeMillis()
 
@@ -145,7 +145,7 @@ class MCTS(
             }
 
             running = false
-            println("Thread $id stopped.")
+            println("!dbg Thread $id stopped.")
         }
 
     }
