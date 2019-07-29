@@ -8,17 +8,17 @@ import main.random
 import main.toCSVString
 import java.io.File
 
-fun startSelfplay(modelFile: File, trainingDataOut: File, gamesToPlay: Int, samplesPerGame: Int){
+fun startSelfplay(modelFile: File, trainingDataOut: File, gamesToPlay: Int, samplesPerGame: Int, thinkingTime: Int){
     val agent = Agent.loadFromFile(modelFile)
 
     val csvWriter = trainingDataOut.bufferedWriter()
 
     for(i in 1..gamesToPlay) {
-        println("Selfplay game $i...")
+        println("[${Thread.currentThread().name}] Selfplay game $i...")
         val start = System.currentTimeMillis()
         val board = Bitboard()
-        val player0 = MCTS(board, 200, 4, 0, ponder = false, strategy = NeuralAgentStrategy(agent), debug = false)
-        val player1 = MCTS(board, 200, 4, 1, ponder = false, strategy = NeuralAgentStrategy(agent), debug = false)
+        val player0 = MCTS(board, thinkingTime, 1, 0, ponder = false, strategy = NeuralAgentStrategy(agent), debug = false)
+        val player1 = MCTS(board, thinkingTime, 1, 1, ponder = false, strategy = NeuralAgentStrategy(agent), debug = false)
         var turn = 0
         val positions = mutableListOf<Bitboard>()
         while (!board.isGameOver()){
@@ -32,7 +32,7 @@ fun startSelfplay(modelFile: File, trainingDataOut: File, gamesToPlay: Int, samp
             turn = 1 - turn
         }
 
-        println("Game $i over, writing to file. (${System.currentTimeMillis() - start}ms)")
+        println("[${Thread.currentThread().name}] Game $i over, writing to file. (${System.currentTimeMillis() - start}ms)")
 
         val chosen = mutableListOf<Int>()
         val result = board.getResultAsInt()
@@ -46,7 +46,7 @@ fun startSelfplay(modelFile: File, trainingDataOut: File, gamesToPlay: Int, samp
             chosen.add(idx)
             val pos = positions[random(positions.size)]
             csvWriter.write(pos.toCSVString())
-            csvWriter.write("$result\n")
+            csvWriter.write("${result * pos.getTotalPopcnt()/81.0}\n")
         }
 
         csvWriter.flush()

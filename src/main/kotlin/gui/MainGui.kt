@@ -1,6 +1,7 @@
 package gui
 
 import ai.MCTS
+import ai.NeuralAgentStrategy
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.scene.control.Alert
@@ -9,7 +10,9 @@ import javafx.scene.control.ButtonType
 import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import main.Bitboard
+import neural.Agent
 import tornadofx.*
+import java.io.File
 
 
 class KTTTApplication : App(GameView::class) {
@@ -18,7 +21,10 @@ class KTTTApplication : App(GameView::class) {
     // GUI AI Skill
     var mcts = getAI()
 
-    private fun getAI() = MCTS(board, 200, 4, debug = true, ponder = false, player = 1)
+    private fun getAI() = MCTS(board, 2000, 4, debug = true, ponder = false, player = 1, strategy =
+        NeuralAgentStrategy(Agent.loadFromFile(File("models/model.h5"), 0.0)))
+        //NeuralAgentStrategy(Agent.buildModel(0.0)))
+        //RandomPlayStrategy())
 }
 
 class GameView : View() {
@@ -67,6 +73,7 @@ class GameView : View() {
 
                 if(board.isGameOver()){
                     val alert = Alert(Alert.AlertType.NONE)
+                    alert.title = "Game Over!"
                     alert.headerText = "Game Over!"
                     alert.contentText = "Result: ${board.getGameState()}"
                     val buttonReset = ButtonType("New Game")
