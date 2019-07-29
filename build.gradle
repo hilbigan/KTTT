@@ -51,7 +51,7 @@ task jarGui(type: Jar) {
 
 task jarSelfplay(type: Jar) {
     manifest {
-        attributes 'Main-Class': 'neural.AgentTest'
+        attributes 'Main-Class': 'neural.AgentTestKt'
     }
     baseName = 'selfplay'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
