@@ -4,6 +4,9 @@ import main.mergeCSVFiles
 import java.io.File
 
 fun main() {
+    if(!File("training").exists()){
+        File("training").mkdir()
+    }
     val threads = 8
 
     // self-play and generate data

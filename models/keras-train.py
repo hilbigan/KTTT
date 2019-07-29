@@ -31,7 +31,6 @@ model.predict(np.array([[0,0,0,0,0,0,0,0,0,
 print(time.time_ns() - start)
 """
 
-"""
 print(model.predict(np.array([[
     1,1,1 ,0,0,0, 0,0,0,
     0,0,0, 0,0,0, 0,0,0,
@@ -43,6 +42,7 @@ print(model.predict(np.array([[
     0,0,0, 0,0,0, 0,0,0,
     1,1,1, 0,0,0, 0,0,0]])))
 
+"""
 model.save("model_predict_game_result.h5")
 """
 
