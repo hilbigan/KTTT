@@ -53,7 +53,7 @@ model.compile(loss='mean_squared_error',
 td = pandas.read_csv("../training/merge.csv", header=None)
 x = td.iloc[:,0:81]
 y = td.iloc[:,81]
-model.fit(x, y, epochs=10, batch_size=16)
+model.fit(x, y, epochs=5, batch_size=16)
 loss_and_metrics = model.evaluate(x, y, batch_size=128)
 print(loss_and_metrics)
 

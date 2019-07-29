@@ -1,12 +1,11 @@
 package auto
 
-import main.random
 import main.Bitboard
 import main.Tied
 import main.Won
+import main.random
 
 fun main(args: Array<String>) {
-
     if(args.isEmpty() || args.contains("help")){
         println("Usage: java -jar auto_fighter.jar name0 'command' name1 'command'")
         System.exit(0)

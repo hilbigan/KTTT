@@ -9,26 +9,59 @@ import kotlin.math.ln
 import kotlin.math.sqrt
 
 class MCTS(
+    /**
+     * The starting position.
+     */
     board: Bitboard,
+
+    /**
+     * Thinking time
+     */
     val time: Int,
+
+    /**
+     * Number of threads. For NN-Strategy, use less threads (until we got nd4j running on GPU)
+     */
     private val numThreads: Int,
+
+    /**
+     * The player that the AI will find moves for.
+     */
     val player: Int,
+
+    /**
+     * Print debug messages?
+     */
     val debug: Boolean = false,
+
+    /**
+     * Wether to store and keep the game tree between moves. If enabled, old computations can be reused.
+     */
     val persistent: Boolean = true,
+
+    /**
+     * Calculate moves with less CPU-usage while waiting for opponents move.
+     * Adjustable with PONDER_TIMEOUT_NS.
+     * Should be disabled for NN-Strategy.
+     */
     val ponder: Boolean = true,
+
+    /**
+     * The strategy, random playout by default
+     */
     val strategy: Strategy = RandomPlayStrategy()
 ) {
-
     var root: Node
     val threads = mutableListOf<MCTSThread>()
     var changingTree = false
+    private var pondering = false
 
     init {
         root = Node(board.clone(), parent = null)
     }
 
     private fun start() {
-        if(debug) println("!dbg Starting $numThreads threads with ${strategy.javaClass.name} strategy.")
+        log("Starting $numThreads threads with ${strategy.javaClass.name} strategy.")
         threads.clear()
         threads.addAll((0 until numThreads).map { MCTSThread(this, it) })
 
@@ -51,7 +84,7 @@ class MCTS(
         if(debug) {
             val avg = root.children.sumBy { it.n } / root.children.size.toDouble() / bestMove.n * 100
             val stdev = sqrt(root.children.map { (avg - it.n) * (avg - it.n) }.sum() / root.children.size.toDouble()) / bestMove.n * 100
-            println("!dbg Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: ${avg.format(1)}%; Stdev: ${stdev.format(1)}%; MaxDepth: ${threads.map { it.maxDepth }.max()}")
+            log("Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q.format(2)}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: ${avg.format(1)}%; Stdev: ${stdev.format(1)}%; MaxDepth: ${threads.map { it.maxDepth }.max()}")
         }
 
         if(persistent){
@@ -61,6 +94,11 @@ class MCTS(
             root = bestMove
 
             changingTree = false
+        }
+
+        if(ponder) {
+            pondering = true
+            log("now pondering")
         }
 
         return bestMove.move
@@ -85,19 +123,24 @@ class MCTS(
             }
 
             if(newRoot != null){
-                if(debug) println("!dbg Found new position in existing tree. New root node is $newRoot (${newRoot.q}/${newRoot.n})")
+                log("Found new position in existing tree. New root node is $newRoot (${newRoot.q.format(2)}/${newRoot.n})")
                 root = newRoot
             } else {
-                if(debug) println("!dbg No matching position found, creating new root node (old tree will be lost).")
+                log("No matching position found, creating new root node (old tree will be lost).")
                 root = Node(newPosition, parent = null)
             }
         } else {
-            if(debug) println("!dbg Board position has not changed. Using already existant root node.")
+            log("Board position has not changed. Using already existant root node.")
         }
 
         root.generateMoves()
 
         changingTree = false
+
+        if(ponder && pondering) {
+            pondering = false
+            log("stopped pondering")
+        }
 
         if(!threads.isEmpty() && threads.all { it.running }){
             Thread.sleep(time.toLong())
@@ -109,7 +152,6 @@ class MCTS(
     }
 
     class MCTSThread(val parent: MCTS, val id: Int) : Thread() {
-
         var iter = 0
         var maxDepth = 0
         var stop = false
@@ -126,6 +168,10 @@ class MCTS(
             while((System.currentTimeMillis() - now < parent.time) || (parent.ponder && !stop)){
                 while (parent.changingTree){
                     Thread.sleep(0, 50)
+                }
+
+                if(parent.pondering){ //TODO improve this behaviour?
+                    Thread.sleep(0, PONDER_TIMEOUT_NS)
                 }
 
                 var depth = 0
@@ -223,5 +269,12 @@ class MCTS(
 
     companion object {
         val UCT_EXPLORATION_SCALAR = sqrt(2.0)
+        const val PONDER_TIMEOUT_NS = 1
+    }
+
+    private fun log(s: String){
+        if(debug) {
+            println("!dbg $s")
+        }
     }
 }

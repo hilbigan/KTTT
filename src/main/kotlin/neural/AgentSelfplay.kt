@@ -7,13 +7,14 @@ fun main() {
     if(!File("training").exists()){
         File("training").mkdir()
     }
+
     val threads = 8
 
     // self-play and generate data
     val threadList = mutableListOf<Thread>()
     for(i in 1..threads){
         Thread {
-            startSelfplay(File("models/model.h5"), File("training/data$i.csv"), gamesToPlay = 10, samplesPerGame = 8, thinkingTime = 500)
+            startSelfplay(File("models/model.h5"), File("training/data$i.csv"), gamesToPlay = 100, samplesPerGame = 8, thinkingTime = 500)
         }.apply {
             name = "Selfplay-$i"
             start()

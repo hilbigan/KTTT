@@ -6,7 +6,6 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
     var dirty = true
 
     fun clone(): Bitboard {
-        //TODO try return this
         val boardCopy = arrayOf(IntArray(9), IntArray(9))
         for(i in 0..1){
             for(j in 0..8){

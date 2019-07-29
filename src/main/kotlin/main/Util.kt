@@ -84,14 +84,11 @@ fun Bitboard.getResultAsInt() : Int {
 }
 
 fun mergeCSVFiles(out: File, vararg files: File){
-    val writer = out.bufferedWriter()
     files.filter { it.exists() }.flatMap {
         it.readLines()
     }.forEach {
-        writer.write(it + "\n")
+        out.appendText(it + "\n")
     }
-    writer.flush()
-    writer.close()
 
     files.filter { it.exists() }.forEach { it.delete() }
 }

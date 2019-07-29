@@ -46,5 +46,10 @@ class NeuralAgentStrategy(val agent: Agent) : Strategy() {
         }
         return eval
     }
+}
 
+class NeuralAgentStrategyPlaceholder : Strategy() {
+    override fun rollout(board: Bitboard, player: Int): Double {
+        error("NeuralAgentStrategyPlaceholder should not be used for rollout!")
+    }
 }
