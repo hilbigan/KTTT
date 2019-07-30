@@ -26,6 +26,7 @@ class CLIParser(parser: ArgParser) {
     val persistent by parser.flagging("enable mcts game tree persistence").default(true)
     val ponder by parser.flagging("-p", "--ponder", help = "enable mcts low-cpu pondering").default(true)
     val modelFile by parser.storing("-f", "--model-file", help = "model file path").default("models/model.h5")
+    val fromPosition by parser.storing(help = "starting position").default("start")
     val debug by parser.flagging("-d", "--debug", help = "enable verbose mode").default(true)
 
     fun log(s: String){
@@ -48,7 +49,13 @@ class CLIParser(parser: ArgParser) {
 
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::CLIParser).run {
-        var board = Bitboard()
+
+        var board: Bitboard
+        if(fromPosition == "start" || fromPosition.isEmpty()){
+            board = Bitboard()
+        } else {
+            board = Bitboard.fromString(fromPosition)
+        }
 
         if(movegen){
             benchmark("Movegen depth=$movegenDepth"){
@@ -100,6 +107,11 @@ fun main(args: Array<String>) = mainBody {
                     } else {
                         continue
                     }
+                }
+
+                if(board.isGameOver()){
+                    log("Game ended.")
+                    continue
                 }
             }
 
