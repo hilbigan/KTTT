@@ -20,14 +20,15 @@ class CLIParser(parser: ArgParser) {
     val time by parser.positional("AI thinking time") { toInt() }.default(1500)
     val threads by parser.positional("CPU threads to use") { toInt() }.default(8)
     val aiStrategy by parser.mapping("--mcts" to RandomPlayStrategy(), "--nn" to NeuralAgentStrategyPlaceholder(), help = "ai type").default(RandomPlayStrategy())
-    val movegen by parser.flagging("movegen benchmark (overrides other options)").default(false)
-    val movegenDepth by parser.storing("movegen depth") { toInt() }.default(-1)
+    val fromPosition by parser.storing("Starting position").default("start")
+    val movegen by parser.flagging("Movegen benchmark (overrides other options)").default(false)
+    val movegenDepth by parser.storing("Movegen depth") { toInt() }.default(-1)
     val repl by parser.flagging("-r", "--repl", help = "REPL mode (human-readable interface)").default(false)
-    val persistent by parser.flagging("enable mcts game tree persistence").default(true)
-    val ponder by parser.flagging("-p", "--ponder", help = "enable mcts low-cpu pondering").default(true)
-    val modelFile by parser.storing("-f", "--model-file", help = "model file path").default("models/model.h5")
-    val fromPosition by parser.storing(help = "starting position").default("start")
-    val debug by parser.flagging("-d", "--debug", help = "enable verbose mode").default(true)
+    val persistent by parser.flagging("Enable mcts game tree persistence").default(false)
+    val ponder by parser.flagging("-p", "--ponder", help = "Enable mcts low-cpu pondering").default(false)
+    val modelFile by parser.storing("-f", "--model-file", help = "Model file path").default("models/model.h5")
+    val randomMoves by parser.storing("Number of random moves to make initially (default 0)") { toInt() }.default(0)
+    val debug by parser.flagging("-d", "--debug", help = "Enable verbose mode").default(false)
 
     fun log(s: String){
         if(debug){
@@ -55,6 +56,14 @@ fun main(args: Array<String>) = mainBody {
             board = Bitboard()
         } else {
             board = Bitboard.fromString(fromPosition)
+        }
+
+        if(randomMoves > 0){
+            for(i in 1..randomMoves){
+                val legalMoves = board.getAllMoves()
+                val move = legalMoves[random(legalMoves.size)]
+                board.makeMove(move)
+            }
         }
 
         if(movegen){

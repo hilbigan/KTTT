@@ -38,10 +38,23 @@ fun main(args: Array<String>) {
     println("Ready.")
 
     fun w(i: Int, s: String){
-        listOf(out0, out1)[i].apply {
-            write(s)
-            newLine()
-            flush()
+        listOf(out0, out1)[i].also {
+            try {
+                it.write(s)
+                it.newLine()
+                it.flush()
+            } catch(e: Exception){
+                println("\n***")
+                println("Got exception while trying to write to program stdin: $e")
+                println("\nResponsible program:")
+                println(listOf(prog0name, prog1name)[i])
+                println("\nLast score:")
+                println("Score: $score0 -- $score1 ($prog0name -- $prog1name)")
+                println("\nFull stack trace:")
+                e.printStackTrace()
+                println("***")
+                System.exit(1)
+            }
         }
     }
 
@@ -94,18 +107,36 @@ fun main(args: Array<String>) {
         w(starter, "start")
 
         while(!board.isGameOver()){
+            println("Score: $score0 -- $score1 ($prog0name -- $prog1name)")
             waitFor(turn)
-            val move = r(turn).toInt()
+            val read: String? = r(turn)
+            var move: Int = -1
+            try {
+                move = read!!.toInt()
+            } catch (e: Exception){
+                println("\n***")
+                println("Got exception while trying to parse program response: $e")
+                println("\nResponsible program:")
+                println(listOf(prog0name, prog1name)[turn])
+                println("\nLast score:")
+                println("Score: $score0 -- $score1 ($prog0name -- $prog1name)")
+                println("\nFull stack trace:")
+                e.printStackTrace()
+                println("\nFull program input:")
+                println(listOf(in0, in1)[turn].readLines().joinToString("\n"))
+                println("***")
+                System.exit(1)
+            }
 
-            if(board.isLegal(move))
+            if(board.isLegal(move)) {
                 board.makeMove(move)
-            else {
-                println("==========")
+            } else {
+                println("***")
                 println("$turn attempted illegal move: ${Bitboard.moveToString(move)}")
                 w(turn, "draw")
                 for(o in (0..11))
                     println(r(turn))
-                println("==========")
+                println("***")
                 System.exit(1)
             }
             println("$turn (${listOf(prog0name, prog1name)[turn]}) made move ${Bitboard.moveToString(move)}.")

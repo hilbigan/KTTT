@@ -140,7 +140,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
             }
             if(row < 6) ret += "========    ========    ========\n"
         }
-        ret += "main.GameState = ${getGameState()}"
+        ret += "GameState = ${getGameState()}"
         return ret
     }
 

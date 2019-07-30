@@ -21,6 +21,7 @@ dependencies {
     }
 
     compile "com.xenomachina:kotlin-argparser:2.0.7"
+    compile group: 'org.slf4j', name: 'slf4j-nop', version: '2.0.0-alpha0'
     compile group: 'org.datavec', name: 'datavec-api', version: '1.0.0-beta4'
 }
 
