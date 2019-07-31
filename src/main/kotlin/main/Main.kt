@@ -36,15 +36,15 @@ class CLIParser(parser: ArgParser) {
         }
     }
 
-    fun buildAI(board: Bitboard): MCTS {
+    fun buildAI(board: Bitboard, turn: Int): MCTS {
         if(aiStrategy is NeuralAgentStrategyPlaceholder){
             if(ponder) {
                 log("Pondering not recommended for NN-Strategy.")
             }
 
-            return MCTS(board, time, threads, 1 - board.turn, debug, persistent, ponder, NeuralAgentStrategy(Agent.loadFromFile(File(modelFile), 0.0)))
+            return MCTS(board, time, threads, turn, debug, persistent, ponder, NeuralAgentStrategy(Agent.loadFromFile(File(modelFile), 0.0)))
         }
-        return MCTS(board, time, threads, 1 - board.turn, debug, persistent, ponder, aiStrategy)
+        return MCTS(board, time, threads, turn, debug, persistent, ponder, aiStrategy)
     }
 }
 
@@ -73,7 +73,7 @@ fun main(args: Array<String>) = mainBody {
             System.exit(0)
         }
 
-        var mcts = buildAI(board)
+        var mcts = buildAI(board, 1 - board.turn)
         val scanner = Scanner(System.`in`)
 
         while(true){
@@ -83,7 +83,7 @@ fun main(args: Array<String>) = mainBody {
             val input = scanner.nextLine()
 
             if(input == "start"){
-                mcts = buildAI(board)
+                mcts = buildAI(board, board.turn)
             } else if(input == "draw"){
                 println(board.toPrettyString())
                 continue
@@ -92,7 +92,7 @@ fun main(args: Array<String>) = mainBody {
                 System.exit(0)
             } else if(input == "reset"){
                 board = Bitboard()
-                mcts = buildAI(board)
+                mcts = buildAI(board, 1 - board.turn)
                 println("ok")
                 continue
             } else {

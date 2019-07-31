@@ -3,6 +3,7 @@ package main
 class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = arrayOf(IntArray(9), IntArray(9)), var turn: Int = 0) {
 
     var cachedMetaField: IntArray = intArrayOf(-1, -1)
+    var cachedGameOver: Boolean = false
     var dirty = true
 
     fun clone(): Bitboard {
@@ -92,11 +93,16 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
     }
 
     fun isGameOver(): Boolean {
+        if(!dirty)
+            return cachedGameOver
+
         val sum = board[0].map { popcnt(it) }.sum()
         if(sum < 9) return false
 
         val metaField = getMetaField()
-        return isWon(metaField[WHITE]) || isWon(metaField[BLACK]) || isGameTied()
+        val ret = isWon(metaField[WHITE]) || isWon(metaField[BLACK]) || isGameTied()
+        cachedGameOver = ret
+        return ret
     }
 
     fun hasPlayerWon(player: Int) = isWon(getMetaField()[player])

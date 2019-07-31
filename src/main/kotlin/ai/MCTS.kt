@@ -84,7 +84,7 @@ class MCTS(
         if(debug) {
             val avg = root.children.sumBy { it.n } / root.children.size.toDouble() / bestMove.n * 100
             val stdev = sqrt(root.children.map { (avg - it.n) * (avg - it.n) }.sum() / root.children.size.toDouble()) / bestMove.n * 100
-            log("Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q.format(2)}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: ${avg.format(1)}%; Stdev: ${stdev.format(1)}%; MaxDepth: ${threads.map { it.maxDepth }.max()}")
+            log("Best move for $player: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q.format(2)}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: ${avg.format(1)}%; Stdev: ${stdev.format(1)}%; MaxDepth: ${threads.map { it.maxDepth }.max()}")
         }
 
         if(persistent){
@@ -170,7 +170,7 @@ class MCTS(
                     Thread.sleep(0, 50)
                 }
 
-                if(parent.pondering){ //TODO improve this behaviour?
+                if(parent.pondering){ //TODO improve this?
                     Thread.sleep(0, PONDER_TIMEOUT_NS)
                 }
 
@@ -210,18 +210,31 @@ class MCTS(
             }
 
         fun generateMoves() = synchronized(children){
-            if(children.size > 0){
+            if(children.size > 0 || board.isGameOver()){
                 return
             }
 
-            board.getAllMoves().forEach {
-                board.makeMove(it)
+            val moves = board.getAllMoves()
+            if(IGNORE_CHANCE_MOVES && moves.any { !board.isChance(it) }){
+                moves.filter { !board.isChance(it) }.forEach {
+                    board.makeMove(it)
 
-                val clone = board.clone()
+                    val clone = board.clone()
 
-                children.add(Node(clone, parent = this, move = it))
+                    children.add(Node(clone, parent = this, move = it))
 
-                board.undoMove(it)
+                    board.undoMove(it)
+                }
+            } else {
+                moves.forEach {
+                    board.makeMove(it)
+
+                    val clone = board.clone()
+
+                    children.add(Node(clone, parent = this, move = it))
+
+                    board.undoMove(it)
+                }
             }
         }
 
@@ -270,11 +283,35 @@ class MCTS(
     companion object {
         val UCT_EXPLORATION_SCALAR = sqrt(2.0)
         const val PONDER_TIMEOUT_NS = 1
+        const val IGNORE_CHANCE_MOVES = false
     }
 
     private fun log(s: String){
         if(debug) {
             println("!dbg $s")
         }
+    }
+
+    /*
+    fun drawTree(){
+        fun Node.draw(indent: Int = 0){
+            println("- ".repeat(indent) + "${Bitboard.moveToString(this.move)} ${this.n}/${this.q}")
+            children.sortedBy { it.n }.forEach {
+                it.draw(indent + 1)
+            }
+        }
+
+        root.draw()
+    }
+    */
+
+    fun getLine(): List<Int> {
+        val list = mutableListOf<Int>()
+        var node = root
+        while(node.children.isNotEmpty()){
+            node = node.children.maxBy { it.n }!!
+            list.add(node.move)
+        }
+        return list
     }
 }
