@@ -4,7 +4,6 @@ import main.Bitboard
 import main.Won
 import main.popcnt
 import main.random
-import neural.Agent
 
 abstract class Strategy {
     abstract fun rollout(board: Bitboard, player: Int): Double
@@ -72,18 +71,6 @@ class BetterRandomPlayStrategy : Strategy() {
             return -1.0
         } else { // Tie
             return 0.0
-        }
-    }
-}
-
-class NeuralAgentStrategy(val agent: Agent) : Strategy() {
-    override fun rollout(board: Bitboard, player: Int): Double {
-        // 1 means player 0 has an advantage, -1 means player 1 has an advantage.
-        // Therefore, if we are player 1, flip the eval score.
-        return if(player == 1){
-            -agent.eval(board)
-        } else {
-            agent.eval(board)
         }
     }
 }
