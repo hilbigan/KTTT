@@ -1,4 +1,4 @@
-![ima](kttt.png)
+![kttt](kttt.png)
 
 # Download
 
