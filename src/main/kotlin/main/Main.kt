@@ -1,13 +1,15 @@
 package main
 
-import ai.*
+import ai.MCTS
+import ai.NeuralAgentStrategy
+import ai.NeuralAgentStrategyPlaceholder
+import ai.RandomPlayStrategy
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import neural.Agent
 import java.io.File
 import java.util.*
-import kotlin.system.exitProcess
 
 /*
 java -jar AutoFighter.jar 5 kt0 "java -jar ../KTTT_jar/KTTT.jar 1500 1" rttt "..\..\..\..\GitHub Projects\UltimateTicTacToe\target\release\RTTT engine"
@@ -36,11 +38,8 @@ class CLIParser(parser: ArgParser) {
 
     fun buildAI(board: Bitboard, turn: Int): MCTS {
         if(aiStrategy is NeuralAgentStrategyPlaceholder){
-            if(ponder) {
-                log("Pondering not recommended for NN-Strategy.")
-            }
-
-            return MCTS(board, time, threads, turn, debug, persistent, ponder, NeuralAgentStrategy(Agent.loadFromFile(File(modelFile), 0.0)))
+            error("NeuralAgentStrategy not supported in release build")
+            //return MCTS(board, time, threads, turn, debug, persistent, ponder, NeuralAgentStrategy(Agent.loadFromFile(File(modelFile), 0.0)))
         }
         return MCTS(board, time, threads, turn, debug, persistent, ponder, aiStrategy)
     }
