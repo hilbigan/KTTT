@@ -1,7 +1,7 @@
 package gui
 
 import ai.MCTS
-import ai.NeuralAgentStrategy
+import ai.RandomPlayStrategy
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.scene.control.Alert
@@ -10,9 +10,7 @@ import javafx.scene.control.ButtonType
 import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import main.Bitboard
-import neural.Agent
 import tornadofx.*
-import java.io.File
 
 
 class KTTTApplication : App(GameView::class) {
@@ -22,9 +20,10 @@ class KTTTApplication : App(GameView::class) {
     var mcts = getAI()
 
     private fun getAI() = MCTS(board, 2000, 4, debug = true, ponder = false, player = 1, strategy =
-        NeuralAgentStrategy(Agent.loadFromFile(File("models/model.h5"), 0.0)))
+        //NeuralAgentStrategy(Agent.loadFromFile(File("models/model.h5"), 0.0)))
         //NeuralAgentStrategy(Agent.buildModel(0.0)))
-        //RandomPlayStrategy())
+        RandomPlayStrategy()
+    )
 }
 
 class GameView : View() {
@@ -66,8 +65,11 @@ class GameView : View() {
         updateButtons(disable = true)
 
         runAsync {
-            val move = mcts.nextMove(board)
-            board.makeMove(move)
+            if(!board.isGameOver()) {
+                val move = mcts.nextMove(board)
+                board.makeMove(move)
+            }
+
             Platform.runLater {
                 updateButtons(disable = false)
 
