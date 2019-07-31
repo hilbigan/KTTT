@@ -6,5 +6,5 @@ while true; do
 	python3 keras-train.py
 	cd ..
 	sleep 1
-	echo "loop" >> log 
+	date >> log
 done
