@@ -6,6 +6,7 @@ group 'KTTT'
 version '1.0'
 
 repositories {
+    maven { url "http://jcenter.bintray.com"}
     mavenCentral()
 }
 
@@ -66,4 +67,11 @@ task jarAutoFighter(type: Jar) {
     baseName = 'auto_fighter'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
+}
+
+task buildJars {
+    dependsOn "jarKTTT"
+    dependsOn "jarGui"
+    dependsOn "jarSelfplay"
+    dependsOn "jarAutoFighter"
 }
