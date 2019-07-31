@@ -13,17 +13,9 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile 'no.tornado:tornadofx:1.7.17'
-    compile "org.deeplearning4j:deeplearning4j-core:1.0.0-beta4"
-
-    if(project.hasProperty("cuda")){
-        compile 'org.nd4j:nd4j-cuda-10.1-platform:1.0.0-beta4'
-    } else {
-        compile 'org.nd4j:nd4j-native-platform:1.0.0-beta4'
-    }
-
+    
     compile "com.xenomachina:kotlin-argparser:2.0.7"
     compile group: 'org.slf4j', name: 'slf4j-nop', version: '2.0.0-alpha0'
-    compile group: 'org.datavec', name: 'datavec-api', version: '1.0.0-beta4'
 }
 
 compileKotlin {
@@ -51,15 +43,6 @@ task jarGui(type: Jar) {
     with jar
 }
 
-task jarSelfplay(type: Jar) {
-    manifest {
-        attributes 'Main-Class': 'neural.AgentSelfplayKt'
-    }
-    baseName = 'selfplay'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
-
 task jarAutoFighter(type: Jar) {
     manifest {
         attributes 'Main-Class': 'auto.AutoFighterKt'
@@ -72,6 +55,5 @@ task jarAutoFighter(type: Jar) {
 task buildJars {
     dependsOn "jarKTTT"
     dependsOn "jarGui"
-    dependsOn "jarSelfplay"
     dependsOn "jarAutoFighter"
 }
