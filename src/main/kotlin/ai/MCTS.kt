@@ -1,31 +1,67 @@
 package ai
 
-import main.*
+import main.Bitboard
+import main.format
+import main.random
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.ln
 import kotlin.math.sqrt
 
 class MCTS(
+    /**
+     * The starting position.
+     */
     board: Bitboard,
-    val time: Int,
-    private val numThreads: Int,
-    val player: Int,
-    val debug: Boolean = false,
-    val persistent: Boolean = true,
-    val ponder: Boolean = true
-) {
 
+    /**
+     * Thinking time
+     */
+    val time: Int,
+
+    /**
+     * Number of threads. For NN-Strategy, use less threads (until we got nd4j running on GPU)
+     */
+    private val numThreads: Int,
+
+    /**
+     * The player that the AI will find moves for.
+     */
+    val player: Int,
+
+    /**
+     * Print debug messages?
+     */
+    val debug: Boolean = false,
+
+    /**
+     * Wether to store and keep the game tree between moves. If enabled, old computations can be reused.
+     */
+    val persistent: Boolean = true,
+
+    /**
+     * Calculate moves with less CPU-usage while waiting for opponents move.
+     * Adjustable with PONDER_TIMEOUT_NS.
+     * Should be disabled for NN-Strategy.
+     */
+    val ponder: Boolean = true,
+
+    /**
+     * The strategy, random playout by default
+     */
+    val strategy: Strategy = RandomPlayStrategy()
+) {
     var root: Node
-    val strategy = Strategy.getRandom()
     val threads = mutableListOf<MCTSThread>()
     var changingTree = false
+    private var pondering = false
 
     init {
         root = Node(board.clone(), parent = null)
     }
 
     private fun start() {
+        log("Starting $numThreads threads with ${strategy.javaClass.name} strategy.")
         threads.clear()
         threads.addAll((0 until numThreads).map { MCTSThread(this, it) })
 
@@ -48,7 +84,7 @@ class MCTS(
         if(debug) {
             val avg = root.children.sumBy { it.n } / root.children.size.toDouble() / bestMove.n * 100
             val stdev = sqrt(root.children.map { (avg - it.n) * (avg - it.n) }.sum() / root.children.size.toDouble()) / bestMove.n * 100
-            println("!dbg Best move: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: ${avg.format(1)}%; Stdev: ${stdev.format(1)}%; MaxDepth: ${threads.map { it.maxDepth }.max()}")
+            log("Best move for $player: ${Bitboard.moveToString(bestMove.move)} (${bestMove.q.format(2)}/${bestMove.n}); Total iterations: ${threads.map { it.iter }.sum()}; Avg: ${avg.format(1)}%; Stdev: ${stdev.format(1)}%; MaxDepth: ${threads.map { it.maxDepth }.max()}")
         }
 
         if(persistent){
@@ -58,6 +94,11 @@ class MCTS(
             root = bestMove
 
             changingTree = false
+        }
+
+        if(ponder) {
+            pondering = true
+            log("now pondering")
         }
 
         return bestMove.move
@@ -82,19 +123,24 @@ class MCTS(
             }
 
             if(newRoot != null){
-                if(debug) println("!dbg Found new position in existing tree. New root node is $newRoot (${newRoot.q}/${newRoot.n})")
+                log("Found new position in existing tree. New root node is $newRoot (${newRoot.q.format(2)}/${newRoot.n})")
                 root = newRoot
             } else {
-                if(debug) println("!dbg No matching position found, creating new root node (old tree will be lost).")
+                log("No matching position found, creating new root node (old tree will be lost).")
                 root = Node(newPosition, parent = null)
             }
         } else {
-            if(debug) println("!dbg Board position has not changed. Using already existant root node.")
+            log("Board position has not changed. Using already existant root node.")
         }
 
         root.generateMoves()
 
         changingTree = false
+
+        if(ponder && pondering) {
+            pondering = false
+            log("stopped pondering")
+        }
 
         if(!threads.isEmpty() && threads.all { it.running }){
             Thread.sleep(time.toLong())
@@ -106,7 +152,6 @@ class MCTS(
     }
 
     class MCTSThread(val parent: MCTS, val id: Int) : Thread() {
-
         var iter = 0
         var maxDepth = 0
         var stop = false
@@ -116,7 +161,7 @@ class MCTS(
             running = true
             iter = 0
 
-            println("!dbg Thread $id starting...")
+            if(parent.debug) println("!dbg Thread $id starting...")
 
             val now = System.currentTimeMillis()
 
@@ -125,8 +170,12 @@ class MCTS(
                     Thread.sleep(0, 50)
                 }
 
+                if(parent.pondering){ //TODO improve this?
+                    Thread.sleep(0, PONDER_TIMEOUT_NS)
+                }
+
                 var depth = 0
-                var child: Node? = parent.root.traverse()//parent.root.traverseAndRollout(parent.player)
+                var child: Node? = parent.root.traverse()
                 child!!.virtualLoss = true
                 child.parent?.virtualLoss = true
                 val result = child.rollout(parent.player, parent.strategy)
@@ -145,14 +194,14 @@ class MCTS(
             }
 
             running = false
-            println("!dbg Thread $id stopped.")
+            if(parent.debug) println("!dbg Thread $id stopped.")
         }
 
     }
 
     class Node(val board: Bitboard, var move: Int = 0, var parent: Node?) {
         val children: CopyOnWriteArrayList<Node> = CopyOnWriteArrayList()
-        var q: Int = 0
+        var q: Double = 0.0
         var n: Int = 0
 
         var virtualLoss: Boolean = false
@@ -161,18 +210,31 @@ class MCTS(
             }
 
         fun generateMoves() = synchronized(children){
-            if(children.size > 0){
+            if(children.size > 0 || board.isGameOver()){
                 return
             }
 
-            board.getAllMoves().forEach {
-                board.makeMove(it)
+            val moves = board.getAllMoves()
+            if(IGNORE_CHANCE_MOVES && moves.any { !board.isChance(it) }){
+                moves.filter { !board.isChance(it) }.forEach {
+                    board.makeMove(it)
 
-                val clone = board.clone()
+                    val clone = board.clone()
 
-                children.add(Node(clone, parent = this, move = it))
+                    children.add(Node(clone, parent = this, move = it))
 
-                board.undoMove(it)
+                    board.undoMove(it)
+                }
+            } else {
+                moves.forEach {
+                    board.makeMove(it)
+
+                    val clone = board.clone()
+
+                    children.add(Node(clone, parent = this, move = it))
+
+                    board.undoMove(it)
+                }
             }
         }
 
@@ -203,47 +265,53 @@ class MCTS(
             }
         }
 
-        fun rollout(player: Int, strategy: Strategy): Int {
-            val boardCopy = board.clone()
-            var moves = board.getTotalPopcnt()
-
-            while(!boardCopy.isGameOver()){
-                val legalMoves = boardCopy.getAllMoves()
-                val move = legalMoves[random(legalMoves.size)]
-                boardCopy.makeMove(move)
-                if(boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves.size > 10 && moves < 25){
-                    boardCopy.undoMove(move)
-                }
-                moves++
-            }
-
-
-            val state = boardCopy.getGameState()
-            if(state is Won && state.who == player){ // Won
-                if(strategy.isAchieved(boardCopy, player)){
-                    return 2
-                } else {
-                    return 1
-                }
-            } else if(state is Won) { // Lost
-                    return -1
-            } else { // Tie
-                return 0
-            }
+        fun rollout(player: Int, strategy: Strategy): Double {
+            return strategy.rollout(board, player)
         }
 
-        fun update(result: Int) = synchronized(this){
+        fun update(result: Double) = synchronized(this){
             q += result
             n += 1
         }
 
         private fun getUCT(parent: Node): Double = synchronized(this){
             val virtualLossScalar = if(virtualLoss) 0.5 else 1.0
-            return ((q.toDouble() / n) + UCT_EXPLORATION_SCALAR * sqrt(ln(parent.n.toDouble()) / n)) * virtualLossScalar
+            return ((q / n) + UCT_EXPLORATION_SCALAR * sqrt(ln(parent.n.toDouble()) / n)) * virtualLossScalar
         }
     }
 
     companion object {
         val UCT_EXPLORATION_SCALAR = sqrt(2.0)
+        const val PONDER_TIMEOUT_NS = 1
+        const val IGNORE_CHANCE_MOVES = false
+    }
+
+    private fun log(s: String){
+        if(debug) {
+            println("!dbg $s")
+        }
+    }
+
+    /*
+    fun drawTree(){
+        fun Node.draw(indent: Int = 0){
+            println("- ".repeat(indent) + "${Bitboard.moveToString(this.move)} ${this.n}/${this.q}")
+            children.sortedBy { it.n }.forEach {
+                it.draw(indent + 1)
+            }
+        }
+
+        root.draw()
+    }
+    */
+
+    fun getLine(): List<Int> {
+        val list = mutableListOf<Int>()
+        var node = root
+        while(node.children.isNotEmpty()){
+            node = node.children.maxBy { it.n }!!
+            list.add(node.move)
+        }
+        return list
     }
 }
