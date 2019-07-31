@@ -7,8 +7,6 @@ import ai.RandomPlayStrategy
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
-import neural.Agent
-import java.io.File
 import java.util.*
 
 /*
