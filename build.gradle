@@ -3,10 +3,9 @@ plugins {
 }
 
 group 'KTTT'
-version '1.0'
+version '1.0-release'
 
 repositories {
-    maven { url "http://jcenter.bintray.com"}
     mavenCentral()
 }
 
