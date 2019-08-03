@@ -69,12 +69,12 @@ java -jar auto_fighter-1.0.jar 10 mcts0 "java -jar kttt-1.0.jar 1000 4 --mcts --
 ```
 
 # Terminology
-**Field**: A subboard of size 3x3, of which the board contains 9. In the image at the top, the center
+**Field**: A subboard of size 3x3, of which the whole board (**meta-field**) contains 9. In the image at the top, the center
 field is taken by "O". Labelled 0 through 9 from top left to bottom right. Internally, fields are encoded in one-hot
 format and can easily be represented as a three digit octal number (0o777 = All fields set, etc).  
-**Square**: Nine squares make up one subboard. Labelled 0 through 9 from top left to bottom right.  
+**Square**: Nine squares make up one field. Labelled 0 through 9 from top left to bottom right.  
 **Moves**: A move is a pair of (Field, Square). Examples: ``4 4`` is the center position. ``0 0`` is the position in the very top left corner.  
-**Chance Move**: A move which, after being played, will allow the opponent to freely choose the field in which he wants to play his move.
+**Chance Move**: A move which, **after** being played, will allow the opponent to freely choose the field in which he wants to play his move.
 (More exactly: A move (F, S), where S is a blocked field).  
 **Moves - Internal representation**: A move is internally represented by an integer M:  
 ``M & (1 << 25)``: Set, if the move is a chance move. (Important if the move is to be undone)  
