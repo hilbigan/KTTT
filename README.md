@@ -10,7 +10,8 @@ The AI difficulty is hard-coded to 2000ms/4x for now. To adjust, build yourself.
 The main program, with configurable settings (See usage below): [KTTT](https://circleci-latest-artifact.herokuapp.com/hilbigan/KTTT/release/kttt-1.0.jar)
 
 ### Others
-Let two different versions fight eachother: [AutoFighter](https://circleci-latest-artifact.herokuapp.com/hilbigan/KTTT/release/auto_fighter-1.0.jar)
+Let two different versions fight eachother: [AutoFighter](https://circleci-latest-artifact.herokuapp.com/hilbigan/KTTT/release/auto_fighter-1.0.jar) (Replaced by EloArena)  
+Let multiple versions fight eachother: Run ``src/main/kotlin/auto/EloArena``.
 
 [CircleCI-Link](https://circleci.com/gh/hilbigan/KTTT)
 

@@ -47,7 +47,7 @@ class BetterRandomPlayStrategy : Strategy() {
             val legalMoves = boardCopy.getAllMoves()
             val move = legalMoves[random(legalMoves.size)]
             boardCopy.makeMove(move)
-            if (boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves.size > 3 && moves < 30) {
+            if (boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves.size > 10 && moves < 25) { //3 <30
                 boardCopy.undoMove(move)
             }
             if(earlyGame){

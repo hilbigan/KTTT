@@ -5,6 +5,7 @@ import main.Tied
 import main.Won
 import main.random
 
+@Deprecated("Use EloArena instead")
 fun main(args: Array<String>) {
     if(args.isEmpty() || args.contains("help")){
         println("Usage: java -jar auto_fighter.jar name0 'command' name1 'command'")
