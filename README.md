@@ -3,16 +3,14 @@
 # Download
 
 ### GUI
-User-friendly GUI: [KTTT-GUI](https://2-188856832-gh.circle-artifacts.com/0/home/circleci/repo/build/libs/kttt-gui-1.0.jar)  
+User-friendly GUI: [KTTT-GUI](https://circleci-latest-artifact.herokuapp.com/hilbigan/KTTT/release/kttt-gui-1.0.jar)  
 The AI difficulty is hard-coded to 2000ms/4x for now. To adjust, build yourself. Future versions might use the main program (KTTT artifact) as ai backend.
 
 ### KTTT
-The main program, with configurable settings (See usage below): [KTTT](https://2-188856832-gh.circle-artifacts.com/0/home/circleci/repo/build/libs/kttt-1.0.jar)
+The main program, with configurable settings (See usage below): [KTTT](https://circleci-latest-artifact.herokuapp.com/hilbigan/KTTT/release/kttt-1.0.jar)
 
 ### Others
-Let two different versions fight eachother: [AutoFighter](https://2-188856832-gh.circle-artifacts.com/0/home/circleci/repo/build/libs/auto_fighter-1.0.jar)
-
-Selfplay (used for NN training): [Selfplay](https://2-188856832-gh.circle-artifacts.com/0/home/circleci/repo/build/libs/selfplay-1.0.jar)
+Let two different versions fight eachother: [AutoFighter](https://circleci-latest-artifact.herokuapp.com/hilbigan/KTTT/release/auto_fighter-1.0.jar)
 
 [CircleCI-Link](https://circleci.com/gh/hilbigan/KTTT)
 
