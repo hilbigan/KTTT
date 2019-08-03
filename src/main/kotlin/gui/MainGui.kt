@@ -1,7 +1,7 @@
 package gui
 
+import ai.BetterRandomPlayStrategy
 import ai.MCTS
-import ai.RandomPlayStrategy
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.scene.control.Alert
@@ -22,7 +22,7 @@ class KTTTApplication : App(GameView::class) {
     private fun getAI() = MCTS(board, 2000, 4, debug = true, ponder = false, player = 1, strategy =
         //NeuralAgentStrategy(Agent.loadFromFile(File("models/model.h5"), 0.0)))
         //NeuralAgentStrategy(Agent.buildModel(0.0)))
-        RandomPlayStrategy()
+        BetterRandomPlayStrategy()
     )
 }
 

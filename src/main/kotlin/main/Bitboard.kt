@@ -2,9 +2,9 @@ package main
 
 class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = arrayOf(IntArray(9), IntArray(9)), var turn: Int = 0) {
 
-    var cachedMetaField: IntArray = intArrayOf(-1, -1)
-    var cachedGameOver: Boolean = false
-    var dirty = true
+    private var cachedMetaField: IntArray = intArrayOf(-1, -1)
+    private var cachedGameOver: Boolean = false
+    private var dirty = true
 
     fun clone(): Bitboard {
         val boardCopy = arrayOf(IntArray(9), IntArray(9))

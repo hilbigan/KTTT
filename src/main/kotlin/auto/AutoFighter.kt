@@ -156,7 +156,7 @@ fun main(args: Array<String>) {
             is Won -> {
                 var winner: Int
                 if(result.who == 0){
-                    println("Program $starter won!")
+                    println("Program $starter (${listOf(prog0name, prog1name)[turn]}) won!")
                     winner = starter
                 } else {
                     println("Program ${1 - starter} won!")

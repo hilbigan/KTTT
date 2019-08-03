@@ -18,6 +18,8 @@ Selfplay (used for NN training): [Selfplay](https://2-188856832-gh.circle-artifa
 
 # Build
 
+[![CircleCI](https://circleci.com/gh/hilbigan/KTTT/tree/master.svg?style=shield)](https://circleci.com/gh/hilbigan/KTTT/tree/master)
+
 To build the GUI:
 ```
 ./gradlew jarGui
@@ -62,4 +64,5 @@ java -jar auto_fighter*.jar <name0> "<command0>" <name1> "<command1>"
 e.g.:
 ```
 java -jar auto_fighter-1.0.jar 10 mcts "java -jar kttt-1.0.jar 100 4 --mcts --persistent -d" nn "java -jar kttt-1.0.jar 100 4 --nn --persistent -f ../../models/model.h5 -d"
+java -jar auto_fighter-1.0.jar 10 mcts0 "java -jar kttt-1.0.jar 1000 4 --mcts --persistent -d" mcts1 "java -jar kttt-1.0.jar 1000 4 --mcts --persistent -d"
 ```

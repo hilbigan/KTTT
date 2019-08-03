@@ -1,9 +1,6 @@
 package main
 
-import ai.MCTS
-import ai.NeuralAgentStrategy
-import ai.NeuralAgentStrategyPlaceholder
-import ai.RandomPlayStrategy
+import ai.*
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
@@ -19,7 +16,7 @@ java -jar AutoFighter.jar 5 kt0 "java -jar ../KTTT_jar/KTTT.jar 1500 8" ktold"ja
 class CLIParser(parser: ArgParser) {
     val time by parser.positional("AI thinking time") { toInt() }.default(1500)
     val threads by parser.positional("CPU threads to use") { toInt() }.default(8)
-    val aiStrategy by parser.mapping("--mcts" to RandomPlayStrategy(), "--nn" to NeuralAgentStrategyPlaceholder(), help = "ai type").default(RandomPlayStrategy())
+    val aiStrategy by parser.mapping("--mcts" to RandomPlayStrategy(), "--nn" to NeuralAgentStrategyPlaceholder(), "--brp" to BetterRandomPlayStrategy(), help = "ai type").default(RandomPlayStrategy())
     val fromPosition by parser.storing("Starting position").default("start")
     val movegen by parser.flagging("Movegen benchmark (overrides other options)").default(false)
     val movegenDepth by parser.storing("Movegen depth") { toInt() }.default(-1)
