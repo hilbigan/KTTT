@@ -54,6 +54,9 @@ Available commands:
 - ``start``: Skip turn / let AI make first move
 - ``draw``: Draw board (human-readable)
 - ``exit``: Exit
+- ``x y``, x, y ∈ [0, 8]: Makes a move in field x, square y. A field is a subboard of size 3x3, of which the whole
+board contains 9 of. The square specifies the exact position within the 3x3 subboard. 0 is always on the top left,
+8 on the bottom right. Examples: ``4 4`` is the center position. ``0 0`` is the position in the very top left corner.
 
 To run AutoFighter:
 ```
@@ -64,3 +67,17 @@ e.g.:
 java -jar auto_fighter-1.0.jar 10 mcts "java -jar kttt-1.0.jar 100 4 --mcts --persistent -d" nn "java -jar kttt-1.0.jar 100 4 --nn --persistent -f ../../models/model.h5 -d"
 java -jar auto_fighter-1.0.jar 10 mcts0 "java -jar kttt-1.0.jar 1000 4 --mcts --persistent -d" mcts1 "java -jar kttt-1.0.jar 1000 4 --mcts --persistent -d"
 ```
+
+# Terminology
+**Field**: A subboard of size 3x3, of which the board contains 9. In the image at the top, the center
+field is taken by "O". Labelled 0 through 9 from top left to bottom right. Internally, fields are encoded in one-hot
+format and can easily be represented as a three digit octal number (0o777 = All fields set, etc).  
+**Square**: Nine squares make up one subboard. Labelled 0 through 9 from top left to bottom right.  
+**Moves**: A move is a pair of (Field, Square). Examples: ``4 4`` is the center position. ``0 0`` is the position in the very top left corner.  
+**Chance Move**: A move which, after being played, will allow the opponent to freely choose the field in which he wants to play his move.
+(More exactly: A move (F, S), where S is a blocked field).  
+**Moves - Internal representation**: A move is internally represented by an integer M:  
+``M & (1 << 25)``: Set, if the move is a chance move. (Important if the move is to be undone)  
+``M & (0xFFFF)``: The lower 16 bits are reserved for encoding the square. (One-Hot)  
+``M & (0x1FF << 16)``: The next 9 bits are reserved for encoding the field. (One-Hot)  
+**Players**: "**X**" = 0, "**O**" = 1
