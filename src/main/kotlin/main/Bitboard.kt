@@ -4,7 +4,13 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
 
     private var cachedMetaField: IntArray = intArrayOf(-1, -1)
     private var cachedGameOver: Boolean = false
-    private var dirty = true
+    private var cachedMetaFieldDirty = true
+    private var cachedGameOverDirty = true
+
+    fun dirty(){
+        cachedMetaFieldDirty = true
+        cachedGameOverDirty = true
+    }
 
     fun clone(): Bitboard {
         val boardCopy = arrayOf(IntArray(9), IntArray(9))
@@ -45,7 +51,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
             validField = square
         }
         turn = 1 - turn
-        dirty = true
+        dirty()
     }
 
     fun getAllMoves(): List<Int> {
@@ -75,7 +81,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
             validField = field
         }
         turn = 1 - turn
-        dirty = true
+        dirty()
     }
 
     fun fieldIsBlocked(field: Int): Boolean {
@@ -93,7 +99,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
     }
 
     fun isGameOver(): Boolean {
-        if(!dirty)
+        if(!cachedGameOverDirty)
             return cachedGameOver
 
         val sum = board[0].map { popcnt(it) }.sum()
@@ -102,6 +108,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         val metaField = getMetaField()
         val ret = isWon(metaField[WHITE]) || isWon(metaField[BLACK]) || isGameTied()
         cachedGameOver = ret
+        cachedGameOverDirty = false
         return ret
     }
 
@@ -115,7 +122,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         }
 
     fun getMetaField(): IntArray {
-        if(!dirty)
+        if(!cachedMetaFieldDirty)
             return cachedMetaField
 
         val field = IntArray(2)
@@ -132,7 +139,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         }
 
         cachedMetaField = field
-        dirty = false
+        cachedMetaFieldDirty = false
         return field
     }
 
