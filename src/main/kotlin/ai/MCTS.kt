@@ -216,23 +216,19 @@ class MCTS(
 
             val moves = board.getAllMoves()
             if(IGNORE_CHANCE_MOVES && moves.any { !board.isChance(it) }){
-                moves.filter { !board.isChance(it) }.forEach {
+                Bitboard.forEachMove(board){ board, it ->
+                    if(!board.isChance(it)) return@forEachMove
+
                     board.makeMove(it)
-
                     val clone = board.clone()
-
                     children.add(Node(clone, parent = this, move = it))
-
                     board.undoMove(it)
                 }
             } else {
-                moves.forEach {
+                Bitboard.forEachMove(board) { board, it ->
                     board.makeMove(it)
-
                     val clone = board.clone()
-
                     children.add(Node(clone, parent = this, move = it))
-
                     board.undoMove(it)
                 }
             }

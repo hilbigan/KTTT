@@ -7,18 +7,28 @@ import java.lang.Math.pow
 
 fun main() {
     val engines = listOf(
-        Engine("kttt-1x-250", "java -jar build/libs/kttt-1.0.jar 250 1 --brp --persistent -d"),
-        Engine("kttt-1x-1000", "java -jar build/libs/kttt-1.0.jar 1000 1 --brp --persistent -d"),
+        //Engine("kttt-1x-250", "java -jar build/libs/kttt-1.0.jar 250 1 --brp --persistent -d"),
         Engine("kttt-4x-250", "java -jar build/libs/kttt-1.0.jar 250 4 --brp --persistent -d"),
-        Engine("kttt-4x-1000", "java -jar build/libs/kttt-1.0.jar 1000 4 --brp --persistent -d"),
-        Engine("kttt-8x-250", "java -jar build/libs/kttt-1.0.jar 250 8 --brp --persistent -d"),
-        Engine("kttt-8x-1000", "java -jar build/libs/kttt-1.0.jar 1000 8 --brp --persistent -d"),
-        Engine("Rttt-1x-1500", "../UltimateTicTacToe/target/release/RTTT engine")
+        //Engine("kttt-1x-250-cachebug", "java -jar build/libs/kttt-1.0-cachebug.jar 250 1 --brp --persistent -d"),
+        Engine("kttt-4x-250-cachebug", "java -jar build/libs/kttt-1.0-cachebug.jar 250 4 --brp --persistent -d")
+
+        //Strength variations
+        //Engine("kttt-1x-250", "java -jar build/libs/kttt-1.0.jar 250 1 --brp --persistent -d"),
+        //Engine("kttt-1x-1000", "java -jar build/libs/kttt-1.0.jar 1000 1 --brp --persistent -d"),
+        //Engine("kttt-4x-250", "java -jar build/libs/kttt-1.0.jar 250 4 --brp --persistent -d"),
+        //Engine("kttt-4x-1000", "java -jar build/libs/kttt-1.0.jar 1000 4 --brp --persistent -d"),
+        //Engine("kttt-8x-250", "java -jar build/libs/kttt-1.0.jar 250 8 --brp --persistent -d"),
+        //Engine("kttt-8x-1000", "java -jar build/libs/kttt-1.0.jar 1000 8 --brp --persistent -d"),
+
+        //Rust
+        //Engine("Rttt-1x-1500", "../UltimateTicTacToe/target/release/RTTT engine")
+
+        // Neurals
         //Engine("nn-8x-250", "java -jar build/libs/kttt-1.0.jar 250 8 --nn --persistent -d"),
         //Engine("nn-8x-1000", "java -jar build/libs/kttt-1.0.jar 1000 8 --nn --persistent -d")
     )
 
-    val fightsPerMatch = 1
+    val fightsPerMatch = 10
 
     for(e0 in engines){
         for(e1 in engines){
@@ -37,6 +47,7 @@ fun main() {
         }
     }
 
+    println("=== Results ===")
     engines.sortedBy { it.elo }.forEach {
         println("${it.name}: ${it.elo}")
     }

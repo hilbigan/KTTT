@@ -55,20 +55,20 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
     }
 
     fun getAllMoves(): List<Int> {
-        val list = mutableListOf<Int>()
+        val moves = ArrayList<Int>(9)
 
         for(i in 0..8){
             if(((1 shl i) and validField) != 0){
                 for(s in 0..8){
                     val move = (1 shl s) or ((1 shl i) shl 16)
                     if(!taken(move) && !fieldIsBlocked(i)){
-                        list.add(move or (if(validField == ALL_FIELDS) ALL_FIELDS_LEGAL else 0))
+                        moves.add(move or (if(validField == ALL_FIELDS) ALL_FIELDS_LEGAL else 0))
                     }
                 }
             }
         }
 
-        return list
+        return moves
     }
 
     fun undoMove(move: Int){
@@ -237,16 +237,23 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         }
 
         fun moveGen(board: Bitboard, depth: Int): Long {
-            if(board.isGameOver()) return 0
-            val moves = board.getAllMoves()
-            return moves.size + if(depth > 0){
-                moves.map {
-                    board.makeMove(it)
-                    val ret = moveGen(board, depth - 1)
-                    board.undoMove(it)
-                    ret
-                }.sum()
-            } else { 0 }
+            if(board.isGameOver()){
+                return 0
+            } else if(depth == 0){
+                var r = 0L
+                forEachMove(board) { _, _ ->
+                    r++
+                }
+                return r
+            } else {
+                var r = 0L
+                forEachMove(board) { it, move ->
+                    board.makeMove(move)
+                    r += 1 + moveGen(it, depth - 1)
+                    board.undoMove(move)
+                }
+                return r
+            }
         }
 
         fun field(i: Int) = (i and FIELD) shr 16
@@ -268,6 +275,19 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
                     || (field and  COLS[2]) ==  COLS[2]
 
         fun isTied(field: Int) = field == ALL_FIELDS
+
+        fun forEachMove(board: Bitboard, fn: (Bitboard, Int) -> Unit){
+            for(i in 0..8){
+                if(((1 shl i) and board.validField) != 0){
+                    for(s in 0..8){
+                        val move = (1 shl s) or ((1 shl i) shl 16)
+                        if(!board.taken(move) && !board.fieldIsBlocked(i)){
+                            fn(board, move or (if(board.validField == ALL_FIELDS) ALL_FIELDS_LEGAL else 0))
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun calculateTurn(): Int {

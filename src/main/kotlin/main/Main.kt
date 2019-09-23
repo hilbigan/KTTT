@@ -7,6 +7,7 @@ import com.xenomachina.argparser.mainBody
 import neural.Agent
 import java.io.File
 import java.util.*
+import kotlin.system.exitProcess
 
 /*
 java -jar AutoFighter.jar 5 kt0 "java -jar ../KTTT_jar/KTTT.jar 1500 1" rttt "..\..\..\..\GitHub Projects\UltimateTicTacToe\target\release\RTTT engine"
@@ -67,7 +68,7 @@ fun main(args: Array<String>) = mainBody {
             benchmark("Movegen depth=$movegenDepth"){
                 println(Bitboard.moveGen(board, movegenDepth))
             }
-            System.exit(0)
+            exitProcess(0)
         }
 
         var mcts = buildAI(board, 1 - board.turn)
