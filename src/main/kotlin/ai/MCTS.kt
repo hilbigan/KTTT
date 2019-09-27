@@ -203,6 +203,7 @@ class MCTS(
         val children: CopyOnWriteArrayList<Node> = CopyOnWriteArrayList()
         var q: Double = 0.0
         var n: Int = 0
+        private var isFullyExpanded: Boolean = false
 
         var virtualLoss: Boolean = false
             set(value) = synchronized(this){
@@ -214,8 +215,7 @@ class MCTS(
                 return
             }
 
-            val moves = board.getAllMoves()
-            if(IGNORE_CHANCE_MOVES && moves.any { !board.isChance(it) }){
+            if(IGNORE_CHANCE_MOVES && board.getAllMoves().any { !board.isChance(it) }){
                 Bitboard.forEachMove(board){ board, it ->
                     if(!board.isChance(it)) return@forEachMove
 
@@ -234,8 +234,16 @@ class MCTS(
             }
         }
 
-        fun isFullyExpanded(): Boolean = synchronized(children) {
-            children.all { it.n > 0 } // All children visited
+        fun isFullyExpanded(): Boolean {
+            if(isFullyExpanded){
+                return true
+            } else {
+                val result = synchronized(children) {
+                    children.all { it.n > 0 } // All children visited
+                }
+                isFullyExpanded = result
+                return result
+            }
         }
 
         fun traverse(): Node {

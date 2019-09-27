@@ -4,6 +4,7 @@ import ai.*
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
+import main.Bitboard.Companion.moveToString
 import neural.Agent
 import java.io.File
 import java.util.*
@@ -27,6 +28,7 @@ class CLIParser(parser: ArgParser) {
     val modelFile by parser.storing("-f", "--model-file", help = "Model file path").default("models/model.h5")
     val randomMoves by parser.storing("Number of random moves to make initially (default 0)") { toInt() }.default(0)
     val debug by parser.flagging("-d", "--debug", help = "Enable verbose mode").default(false)
+    val debugLine by parser.flagging("-l", "--line", help = "Show AI line debug info (requires verbose mode to be enabled)").default(false)
 
     fun log(s: String){
         if(debug){
@@ -141,6 +143,9 @@ fun main(args: Array<String>) = mainBody {
                     stack.addAll(node.children)
                 }
                 log("Node Count: $count; Visit Count: $visits; Root Node Visit Count: ${mcts.root.n}; Memory Usage: ${Runtime.getRuntime().totalMemory() / 10e6}mb")
+                if(debugLine){
+                    log("Line: " + mcts.getLine().joinToString(" ", transform = ::moveToString))
+                }
             } else if(!repl) {
                 println(move)
             }

@@ -1,15 +1,15 @@
 package main
 
-class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = arrayOf(IntArray(9), IntArray(9)), var turn: Int = 0) {
+import java.util.*
+import kotlin.collections.ArrayList
 
-    private var cachedMetaField: IntArray = intArrayOf(-1, -1)
-    private var cachedGameOver: Boolean = false
-    private var cachedMetaFieldDirty = true
-    private var cachedGameOverDirty = true
+class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = arrayOf(IntArray(9), IntArray(9)), var turn: Int = 0) {
+    private var cachedMetaField: Optional<IntArray> = Optional.empty()
+    private var cachedGameOver: Optional<Boolean> = Optional.empty()
 
     fun dirty(){
-        cachedMetaFieldDirty = true
-        cachedGameOverDirty = true
+        cachedMetaField = Optional.empty()
+        cachedGameOver = Optional.empty()
     }
 
     fun clone(): Bitboard {
@@ -45,23 +45,53 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         val square = square(move)
         board[turn][toIndex(field)] = board[turn][toIndex(field)] or square
 
-        if(fieldIsBlocked(toIndex(square)) || isWon(field)){
+        if(fieldIsBlocked(toIndex(square))){
             validField = ALL_FIELDS
         } else {
             validField = square
         }
+
         turn = 1 - turn
         dirty()
+    }
+
+    fun getNumberOfAvailableMoves(): Int {
+        var count = 0
+        for(i in 0..8){
+            if(((1 shl i) and validField) != 0 && !fieldIsBlocked(i)){
+                count += 9 - popcnt(board[0][i] or board[1][i])
+            }
+        }
+        return count
+    }
+
+    fun getNthMove(n: Int): Int {
+        var c = 0
+        for(i in 0..8){
+            if(((1 shl i) and validField) != 0){
+                for(s in 0..8){
+                    val move = (1 shl s) or ((1 shl i) shl 16)
+                    if(!taken(move) && !fieldIsBlocked(i)){
+                        if(c == n){
+                            return move or (if(validField == ALL_FIELDS) ALL_FIELDS_LEGAL else 0)
+                        } else {
+                            c++
+                        }
+                    }
+                }
+            }
+        }
+        return -1
     }
 
     fun getAllMoves(): List<Int> {
         val moves = ArrayList<Int>(9)
 
         for(i in 0..8){
-            if(((1 shl i) and validField) != 0){
+            if(((1 shl i) and validField) != 0 && !fieldIsBlocked(i)){
                 for(s in 0..8){
                     val move = (1 shl s) or ((1 shl i) shl 16)
-                    if(!taken(move) && !fieldIsBlocked(i)){
+                    if(!taken(move)){
                         moves.add(move or (if(validField == ALL_FIELDS) ALL_FIELDS_LEGAL else 0))
                     }
                 }
@@ -99,16 +129,15 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
     }
 
     fun isGameOver(): Boolean {
-        if(!cachedGameOverDirty)
-            return cachedGameOver
+        if(cachedGameOver.isPresent)
+            return cachedGameOver.get()
 
         val sum = board[0].map { popcnt(it) }.sum()
         if(sum < 9) return false
 
         val metaField = getMetaField()
         val ret = isWon(metaField[WHITE]) || isWon(metaField[BLACK]) || isGameTied()
-        cachedGameOver = ret
-        cachedGameOverDirty = false
+        cachedGameOver = Optional.of(ret)
         return ret
     }
 
@@ -122,8 +151,8 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         }
 
     fun getMetaField(): IntArray {
-        if(!cachedMetaFieldDirty)
-            return cachedMetaField
+        if(cachedMetaField.isPresent)
+            return cachedMetaField.get()
 
         val field = IntArray(2)
         for (p in 0..1){
@@ -138,8 +167,7 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
                 .toInt() shl 0)
         }
 
-        cachedMetaField = field
-        cachedMetaFieldDirty = false
+        cachedMetaField = Optional.of(field)
         return field
     }
 
@@ -214,6 +242,14 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
         val COLS = intArrayOf(oct(111), oct(222), oct(444))
         val O_O = oct(50)
 
+        val FIELD_IS_WON = lazy {
+            Array(1024){ field ->
+                (field and DIAGS[0]) == DIAGS[0] || (field and DIAGS[1]) == DIAGS[1]
+                        || (field and  ROWS[0]) ==  ROWS[0] || (field and  ROWS[1]) ==  ROWS[1] || (field and  ROWS[2]) ==  ROWS[2]
+                        || (field and  COLS[0]) ==  COLS[0] || (field and  COLS[1]) ==  COLS[1] || (field and  COLS[2]) ==  COLS[2]
+            }
+        }
+
         fun moveToString(move: Int): String {
             return "[a${((move and ALL_FIELDS_LEGAL) shr 25)} f${toIndex(
                 field(move)
@@ -264,24 +300,16 @@ class Bitboard(var validField: Int = ALL_FIELDS, var board: Array<IntArray> = ar
          */
         fun toIndex(i: Int) = 31 - Integer.numberOfLeadingZeros(i)
 
-        fun isWon(field: Int) =
-            (field and DIAGS[0]) == DIAGS[0]
-                    || (field and DIAGS[1]) == DIAGS[1]
-                    || (field and  ROWS[0]) ==  ROWS[0]
-                    || (field and  ROWS[1]) ==  ROWS[1]
-                    || (field and  ROWS[2]) ==  ROWS[2]
-                    || (field and  COLS[0]) ==  COLS[0]
-                    || (field and  COLS[1]) ==  COLS[1]
-                    || (field and  COLS[2]) ==  COLS[2]
+        fun isWon(field: Int) = FIELD_IS_WON.value[field]
 
         fun isTied(field: Int) = field == ALL_FIELDS
 
         fun forEachMove(board: Bitboard, fn: (Bitboard, Int) -> Unit){
             for(i in 0..8){
-                if(((1 shl i) and board.validField) != 0){
+                if(((1 shl i) and board.validField) != 0 && !board.fieldIsBlocked(i)){
                     for(s in 0..8){
                         val move = (1 shl s) or ((1 shl i) shl 16)
-                        if(!board.taken(move) && !board.fieldIsBlocked(i)){
+                        if(!board.taken(move)){
                             fn(board, move or (if(board.validField == ALL_FIELDS) ALL_FIELDS_LEGAL else 0))
                         }
                     }

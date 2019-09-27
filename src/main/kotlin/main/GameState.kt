@@ -7,11 +7,13 @@ class Running : GameState(){
         return "Running()"
     }
 }
+
 class Tied : GameState(){
     override fun toString(): String {
         return "Tied()"
     }
 }
+
 class Won(val who: Int) : GameState(){
     override fun toString(): String {
         return "Won($who)"

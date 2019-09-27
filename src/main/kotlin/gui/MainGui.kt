@@ -19,7 +19,7 @@ class KTTTApplication : App(GameView::class) {
     // GUI AI Skill
     var mcts = getAI()
 
-    private fun getAI() = MCTS(board, 2000, 1, debug = true, ponder = true, player = 1, strategy =
+    private fun getAI() = MCTS(board, 2000, 4, debug = true, ponder = true, player = 1, strategy =
         //NeuralAgentStrategy(Agent.loadFromFile(File("models/model.h5"), 0.0)))
         //NeuralAgentStrategy(Agent.buildModel(0.0)))
         BetterRandomPlayStrategy()

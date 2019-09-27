@@ -44,10 +44,10 @@ class BetterRandomPlayStrategy : Strategy() {
         val myMetaField = board.getMetaField().copyOf()
 
         while (!boardCopy.isGameOver()) {
-            val legalMoves = boardCopy.getAllMoves()
-            val move = legalMoves[random(legalMoves.size)]
+            val legalMoves = boardCopy.getNumberOfAvailableMoves()
+            val move = boardCopy.getNthMove(random(legalMoves))
             boardCopy.makeMove(move)
-            if (boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves.size > 10 && moves < 25) { //3 <30
+            if (boardCopy.validField == Bitboard.ALL_FIELDS && legalMoves > 10 && moves < 25) { //3 <30
                 boardCopy.undoMove(move)
             }
             if(earlyGame){
